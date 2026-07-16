@@ -22,15 +22,6 @@ export default defineConfig({
         target: 'http://localhost:8888',
         changeOrigin: true,
         secure: false,
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            // 转发客户端真实IP，用于后端IP定位
-            const clientIp = req.socket.remoteAddress;
-            if (clientIp) {
-              proxyReq.setHeader('X-Forwarded-For', clientIp);
-            }
-          });
-        },
       },
     },
   },
