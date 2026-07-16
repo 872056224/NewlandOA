@@ -1,0 +1,34 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Project tools (downloaded dependencies)
+.oa-tools/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Compiled
+__pycache__/
+*.pyc
+
+# Claude config (API keys)
+.claude/

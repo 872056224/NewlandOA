@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工个人中心</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+
+</head>
+<body>
+<div id="div">
+    <a style="color: slategrey; font-size: 20px;font-weight: bolder; margin-left: 20px;">签到情况</a>
+    <div style="margin: 20px;"></div>
+    <!-- 数据展现表格 -->
+    <el-table :data="tableData"
+              :span-method="objectSpanMethod">
+        <el-table-column prop="date" label="日期" width="180">
+        </el-table-column>
+        <el-table-column label="签到时间" prop="signDate" min-width="180" align="center">
+        </el-table-column>
+        <el-table-column label="签到地址" prop="sign_address" min-width="180" align="center">
+        </el-table-column>
+        <el-table-column label="工号" prop="number" min-width="140" align="center">
+        </el-table-column>
+        <el-table-column label="姓名" prop="name" min-width="140" align="center">
+        </el-table-column>
+        <el-table-column label="部门" prop="dept_name" min-width="140" align="center">
+        </el-table-column>
+        <el-table-column label="签到状态" min-width="140" align="center">
+            <template slot-scope="scope">
+                <el-tag effect="dark"
+                        :type="scope.row.state === '已签到' ? 'success' : 'danger'"
+                        disable-transitions>{{scope.row.state}}</el-tag>
+            </template>
+        </el-table-column>
+    </el-table>
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[6,10,14]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            style="text-align: center"
+            layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+
+</div>
+</body>
+<script>
+    new Vue({
+        el: "#div",
+        data: {
+            //添加窗口显示状态
+
+            formData: {},//添加表单的数据
+            editFormData: {
+                number: 0,
+            },
+            //编辑表单的数据
+            tableData: [],//表格数据
+            pagination: {
+                //当前页
+                currentPage: 1,
+                //每页显示条数
+                pageSize: 10,
+                //总条数
+                total: 0
+            },
+            rules: {
+                number: [
+                    {required: true, message: '请输入学号', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                name: [
+                    {required: true, message: '请输入姓名', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                sign: [
+                    {required: true, message: '请选择日期', trigger: 'change'}
+                ],
+                classin: [
+                    {required: true, message: '请输入地址', trigger: 'blur'},
+                    {min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur'}
+                ],
+            }
+        },
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //selectByPage：分页查询    currentPage：当前页面                                                                                                               总页数
+                axios.post("sign/selectByPage", "currentPage="
+                    + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                    this.$message({
+                        message: '查询成功',
+                        type: 'success'
+                    });
+                //将查询出的数据赋值tableData
+                this.tableData = this.handleTableData(resp.data.data);
+                console.log(this.handleTableData(resp.data.data))
+                //设置分页参数
+                //当前页
+                this.pagination.currentPage = resp.data.pageNum;
+                //总条数
+                this.pagination.total = resp.data.total;
+            })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                //修改分页查询的参数
+                this.pagination.pageSize = pageSize;
+                //重新执行查询
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                //修改分页查询的参数
+                this.pagination.currentPage = pageNum;
+                //重新执行查询
+                this.selectByPage();
+            },
+
+            resetForm(addForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[addForm].resetFields();
+            },
+            lengthO(o){
+                const t = typeof o;
+                if(t === 'string'){
+                    return o.length;
+                }else if(t === 'object'){
+                    let n = 0;
+                    for(const i in o){
+                        n++;
+                    }
+                    return n;
+                }
+                return false;
+            },
+            handleTableData(data){
+                let  arr =[];
+                let  da ='';
+                let  spanNum = 0;
+                let info1 = {}
+                for(let i =0; i<data.length;i++){
+                    const info = data[i];
+                    for (let j=0;j<this.lengthO(data[i]);j++){
+                        info1 = {
+                            spanNum:spanNum,
+                            signDate:info.signDate.substring((info.signDate.lastIndexOf(" ")+1),info.signDate.length),
+                            number:info.number,
+                            name:info.name,
+                            dept_name:info.dept_name,
+                            state:info.state, sign_address:info.sign_address,
+                            date:data[i].signDate.substring(0,data[i].signDate.indexOf(" ")),
+                        }
+                    }
+                    spanNum++;
+                    arr.push(info1)
+                }
+                return arr;
+            },
+            objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+                if (columnIndex === 0) {
+                    if (row.spanNum % 2 === 0) {
+                        return {
+                            rowspan: 2,
+                            colspan: 1
+                        };
+                    } else {
+                        return {
+                            rowspan: 0,
+                            colspan: 0
+                        };
+                    }
+                }
+            }
+
+        },
+        mounted() {
+            //调用查询该员工具体信息功能
+            this.selectByPage();
+
+
+        }
+    });
+</script>
+<style>
+    .yes{
+        color: green;
+    }
+    .no{
+        color: red;
+    }
+</style>
+</html>

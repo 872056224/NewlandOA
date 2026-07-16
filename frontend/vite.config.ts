@@ -1,0 +1,37 @@
+import { fileURLToPath, URL } from 'node:url'
+
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    vue(),
+    vueDevTools(),
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    },
+  },
+  server: {
+    proxy: {
+      // 所有API请求都通过网关(8888端口)
+      '/api': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            // 转发客户端真实IP，用于后端IP定位
+            const clientIp = req.socket.remoteAddress;
+            if (clientIp) {
+              proxyReq.setHeader('X-Forwarded-For', clientIp);
+            }
+          });
+        },
+      },
+    },
+  },
+})

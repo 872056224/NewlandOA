@@ -1,0 +1,176 @@
+[
+  {
+    "id": "kb-sign-001",
+    "category": "sign",
+    "question": "怎么签到？",
+    "answer": "签到步骤：点击左侧菜单【员工签到】→ 系统自动获取您的 GPS 定位 → 点击签到按钮即可。注意：上午班和下午班需各签到一次。"
+  },
+  {
+    "id": "kb-sign-002",
+    "category": "sign",
+    "question": "签到时间是几点？",
+    "answer": "上午班签到时间为 8:30 前，下午班签到时间为 17:30 前，请以系统当日生成的签到记录时间为准。"
+  },
+  {
+    "id": "kb-sign-003",
+    "category": "sign",
+    "question": "忘记签到了怎么办？",
+    "answer": "签到记录生成后无法自行补签，请联系管理员在后台核实情况后修改签到状态。"
+  },
+  {
+    "id": "kb-sign-004",
+    "category": "sign",
+    "question": "签到时定位失败怎么办？",
+    "answer": "签到需要浏览器位置权限：请检查浏览器是否允许本站获取定位（地址栏附近的位置图标），允许后刷新页面重试。若仍失败，请更换浏览器或联系管理员。"
+  },
+  {
+    "id": "kb-sign-005",
+    "category": "sign",
+    "question": "怎么查看我的签到记录？",
+    "answer": "点击左侧菜单【签到记录】即可分页查看您的全部历史签到，包括签到时间、状态和签到地址。"
+  },
+  {
+    "id": "kb-sign-006",
+    "category": "sign",
+    "question": "签到显示的地址不对怎么办？",
+    "answer": "签到地址由浏览器定位与地图服务解析得出，可能存在偏差。偏差较大时可刷新页面重新定位后再签到；若持续异常，请联系管理员备注说明。"
+  },
+  {
+    "id": "kb-sign-007",
+    "category": "sign",
+    "question": "上午签到了，下午还需要签到吗？",
+    "answer": "需要。上午班（a）和下午班（p）是两条独立的签到记录，必须分别签到，缺一次即记为该时段未签到。"
+  },
+  {
+    "id": "kb-sign-008",
+    "category": "sign",
+    "question": "迟到了还能签到吗？",
+    "answer": "可以继续签到，但签到状态可能被记录为迟到/异常，最终考勤结果以管理员审核为准。"
+  },
+  {
+    "id": "kb-account-001",
+    "category": "account",
+    "question": "怎么修改密码？",
+    "answer": "点击左侧菜单【修改密码】，输入旧密码和新密码（两次确认）后提交即可。修改成功后需要重新登录。"
+  },
+  {
+    "id": "kb-account-002",
+    "category": "account",
+    "question": "忘记密码了怎么办？",
+    "answer": "请联系管理员重置密码，重置后会恢复为初始密码，登录后请立即修改。"
+  },
+  {
+    "id": "kb-account-003",
+    "category": "account",
+    "question": "初始密码是多少？",
+    "answer": "新员工账号的初始密码为 123，为了账号安全，请首次登录后立即在【修改密码】中更换。"
+  },
+  {
+    "id": "kb-account-004",
+    "category": "account",
+    "question": "怎么修改个人信息？",
+    "answer": "点击左侧菜单【个人信息】，可查看并修改您的生日、住址等基本信息；部门和职务由管理员统一维护，个人无法修改。"
+  },
+  {
+    "id": "kb-account-005",
+    "category": "account",
+    "question": "登录不上系统怎么办？",
+    "answer": "请确认员工工号和密码输入正确（注意大小写）。若多次失败，可能是密码被修改或账号被调整，请联系管理员核实。"
+  },
+  {
+    "id": "kb-account-006",
+    "category": "account",
+    "question": "怎么退出登录？",
+    "answer": "点击页面右上角的【退出登录】按钮，确认后即可安全退出系统。"
+  },
+  {
+    "id": "kb-leave-001",
+    "category": "leave",
+    "question": "怎么请假？",
+    "answer": "请假流程：先与直属领导口头/书面沟通，再联系管理员提交请假申请（包含起止时间和事由），等待审批结果即可。"
+  },
+  {
+    "id": "kb-leave-002",
+    "category": "leave",
+    "question": "请假审批有哪些状态？",
+    "answer": "请假单共有三种状态：待审批、已批准、已拒绝。审批结果可联系管理员查询。"
+  },
+  {
+    "id": "kb-leave-003",
+    "category": "leave",
+    "question": "请假批准后考勤怎么算？",
+    "answer": "请假获批后，请假时段内的考勤将按请假处理，不计为缺勤；具体规则以公司考勤制度为准。"
+  },
+  {
+    "id": "kb-org-001",
+    "category": "org",
+    "question": "怎么查看我的部门和职务？",
+    "answer": "点击左侧菜单【个人信息】，页面会显示您当前所属的部门和职务。"
+  },
+  {
+    "id": "kb-org-002",
+    "category": "org",
+    "question": "公司有哪些部门？",
+    "answer": "目前包括：人事部、后勤部、Java研发部、商品部、销售部、行政部、大数据研发部、前端研发部、测试部等，以系统实际数据为准。"
+  },
+  {
+    "id": "kb-org-003",
+    "category": "org",
+    "question": "怎么调整部门或职务？",
+    "answer": "部门与职务的调整由管理员在后台统一操作，请先与人事部门沟通确认后由管理员变更。"
+  },
+  {
+    "id": "kb-system-001",
+    "category": "system",
+    "question": "这个系统能做什么？",
+    "answer": "员工端支持：个人信息维护、GPS 定位签到打卡、签到记录分页查询、密码修改，以及我提供的 AI 客服问答服务。"
+  },
+  {
+    "id": "kb-system-002",
+    "category": "system",
+    "question": "管理员入口在哪里？",
+    "answer": "管理员请访问 /admin-login 页面登录，管理端可进行员工、部门、职务和考勤管理。普通员工无管理端权限。"
+  },
+  {
+    "id": "kb-system-003",
+    "category": "system",
+    "question": "怎么联系管理员？",
+    "answer": "可前往行政部找系统管理员，或拨打内线 8000 联系 IT 支持（示例联系方式，以公司公告为准）。"
+  },
+  {
+    "id": "kb-system-004",
+    "category": "system",
+    "question": "考勤数据多久更新一次？",
+    "answer": "签到数据实时写入数据库，管理端的考勤统计与图表为实时计算，签到完成后即可被统计到。"
+  },
+  {
+    "id": "kb-chitchat-001",
+    "category": "chitchat",
+    "question": "你好",
+    "answer": "您好！我是 OA 智能客服小助手，可以问我签到、密码、请假、部门等相关问题哦～"
+  },
+  {
+    "id": "kb-chitchat-002",
+    "category": "chitchat",
+    "question": "你是谁？",
+    "answer": "我是 OA 办公系统的 AI 客服，基于本地自建向量知识库进行语义检索回答，不依赖外网、毫秒级响应～"
+  },
+  {
+    "id": "kb-chitchat-003",
+    "category": "chitchat",
+    "question": "你会什么？",
+    "answer": "我熟悉本系统的签到打卡、密码账号、请假流程、部门职务等常见问题，试着问我「怎么签到」吧！"
+  },
+  {
+    "id": "kb-chitchat-004",
+    "category": "chitchat",
+    "question": "谢谢",
+    "answer": "不客气！还有其他问题随时来问我～祝您工作愉快！"
+  },
+  {
+    "id": "kb-chitchat-005",
+    "category": "chitchat",
+    "question": "再见",
+    "answer": "再见，祝您工作顺利！有问题随时回来找我～"
+  }
+]
