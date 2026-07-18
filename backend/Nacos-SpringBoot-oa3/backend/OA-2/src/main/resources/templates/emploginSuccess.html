@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工个人中心</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <style>
+        body,html{
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .el-header {
+            background-color: #ffffff;
+        }
+
+        .header-img {
+            height: 40px;
+            margin-top: 10px;
+            float: left;
+        }
+    </style>
+</head>
+<body style="height: 100%;">
+<div id="div">
+    <el-container>
+        <!-- 头部-->
+        <el-header class="el-header">
+            <el-container>
+                <div>
+                    <el-image class="header-img" src="img/emphand.jpg"></el-image>
+                    <span style="font-size: 10px;font-weight: bold;float: left;margin-top: 24px;margin-left: 10px">员工个人中心</span>
+                </div>
+
+                <!--vue分页的插件-->
+                <el-menu
+                        :default-active="1"
+                        @select="handleSelect"
+                        active-text-color="#ffd04b"
+                        background-color="#ffffff"
+                        mode="horizontal"
+                        style="margin-left: auto;"
+                        text-color="black">
+                    <el-menu-item index="1">处理中心</el-menu-item>
+                    <el-submenu index="2">
+                        <template slot="title">我的工作台</template>
+                        <el-menu-item index="2-1"><a href="/logout" style="text-decoration: none;color: red">退出登录</a></el-menu-item>
+                    </el-submenu>
+                    <el-menu-item index="3"><a href="/emploginSuccess" target="_self">首页</a></el-menu-item>
+                </el-menu>
+            </el-container>
+        </el-header>
+
+        <!-- 中间部分 -->
+        <el-container style="height: 100%; border: 1px solid #eee">
+            <!-- 侧边栏 -->
+            <el-aside style="background-color: rgb(238, 241, 246)" width="200px">
+                <el-menu :default-openeds="['1','2']">
+                    <el-submenu index="1">
+                        <template slot="title"><i class="el-icon-menu"></i>个人信息管理</template>
+                        <el-menu-item-group>
+                            <el-menu-item @click="getinfo" index="1-1">
+                                <i class="el-icon-tickets"></i>详细信息管理
+                            </el-menu-item>
+                            <el-menu-item @click="update_pwd" index="1-2"><i class="el-icon-edit"></i>修改密码
+                            </el-menu-item>
+                        </el-menu-item-group>
+                    </el-submenu>
+                    <el-submenu index="2">
+                        <template slot="title"><i class="el-icon-menu"></i>出勤管理</template>
+                        <el-menu-item-group>
+                            <el-menu-item @click="signToday" index="3-1"><i class="el-icon-help"></i>今日签到</el-menu-item>
+                            <el-menu-item @click="signMessage" index="3-2"><i class="el-icon-help"></i>签到记录
+                            </el-menu-item>
+                        </el-menu-item-group>
+                    </el-submenu>
+                </el-menu>
+            </el-aside>
+            <el-container>
+                <!-- 主区域拼接部分：根据 vue的js 实现拼接manager.html页面-->
+                <el-main>
+                    <iframe :src="iframeSrc" frameborder="false"
+                            style="top:80px;left: 120px; width: 100%;height:800px;"></iframe>
+                </el-main>
+            </el-container>
+        </el-container>
+    </el-container>
+</div>
+</body>
+<script>
+    new Vue({
+        el: "#div",
+        data: {
+            iframeSrc: "/empManager"
+        },
+
+        methods: {
+            getinfo: function () {
+                this.iframeSrc = "/empInfoList"
+            },
+            update_pwd: function () {
+                this.iframeSrc = "/empUpdatePwd"
+            },
+
+            signToday: function () {
+                this.iframeSrc = "/empSignIn"
+            },
+
+            signMessage: function () {
+                this.iframeSrc = "/empSignMessage"
+            },
+
+        }
+    });
+</script>
+</html>

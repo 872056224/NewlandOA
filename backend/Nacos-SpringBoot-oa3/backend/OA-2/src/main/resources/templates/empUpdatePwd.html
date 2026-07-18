@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工个人中心</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div" style="width: 500px;position: absolute;left: 50%;top: 40%;transform: translate(-50%,-60%)">
+    <p style="color: slategrey; font-size: 20px;font-weight: bolder; margin-left: 20px;">修改密码</p>
+    <div style="margin: 20px;"></div>
+    <el-form :model="editFormData" :rules="rules" class="demo-ruleForm" label-width="80px" ref="editFormData"
+             status-icon style="margin-right: 5px">
+        <el-form-item label="员工工号" prop="number">
+            <el-input :disabled="true" style="width: 100%" v-model="editFormData.number"></el-input>
+        </el-form-item>
+        <el-form-item label="旧密码" prop="old_pwd">
+            <el-input autocomplete="off" placeholder="请输入旧密码" style="width: 100%" type="password"
+                      v-model="editFormData.old_pwd"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="pass">
+            <el-input autocomplete="off" placeholder="请输入新的密码" style="width: 100%" type="password"
+                      v-model="editFormData.pass"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="checkPass">
+            <el-input autocomplete="off" placeholder="请再次输入新的密码以核对" style="width: 100%" type="password"
+                      v-model="editFormData.checkPass"></el-input>
+        </el-form-item>
+        <el-form-item align="right">
+            <el-button @click="updatePwd('editFormData')" type="primary">确认修改</el-button>
+        </el-form-item>
+    </el-form>
+    </el-dialog>
+
+</div>
+</body>
+<script>
+
+    new Vue({
+        el: "#div",
+        data: {
+            editFormData: {
+                old_pwd: '',
+                pass: '',
+                checkPass: ''
+            },//编辑表单的数据
+            tableData: [],
+        },
+        data() {
+            var checkOldPwd = (rule, value, callback) => {
+                if (!value) {
+                    console.log("旧的密码校验是否为空" + value, this.editFormData.pwd);
+                    callback(new Error('旧密码不能为空'));
+                } else {
+                    if (value !== this.editFormData.pwd) {
+                        console.log("旧密码校验是否正确" + this.editFormData.pass)
+                        callback(new Error('旧密码错误'));
+                    } else {
+                        callback();
+                    }
+                }
+            };
+            var validatePass = (rule, value, callback) => {
+                if (!value) {
+                    console.log("新的密码校验是否为空" + value, this.editFormData.pass)
+                    callback(new Error('请输入新的密码'));
+                } else {
+                    console.log("adasdsadasdasdasdasdas" + value, this.editFormData.pass)
+                    if (this.editFormData.checkPass !== '') {
+                        this.$refs.editFormData.validateField('checkPass');
+                    }
+                    callback();
+                }
+            };
+            var validatePass2 = (rule, value, callback) => {
+                if (!value) {
+                    callback(new Error('请再次输入新的密码'));
+                } else if (value !== this.editFormData.pass) {
+                    callback(new Error('两次输入密码不一致!'));
+                } else {
+                    callback();
+                }
+            };
+            return {
+                labelPosition: 'right',
+                editFormData: {
+                    number: 0,
+                    name: '',
+                    birthday: '',
+                    address: '',
+                    dept_name: '',
+                    duty: '',
+                    old_pwd: '',
+                    pass: '',
+                    checkPass: ''
+                },
+                rules: {
+                    pass: [
+                        {validator: validatePass, trigger: 'blur'}
+                    ],
+                    checkPass: [
+                        {validator: validatePass2, trigger: 'blur'}
+                    ],
+                    // old_pwd: [
+                    //     {validator: checkOldPwd, trigger: 'blur'}
+                    // ]
+                }
+            };
+        },
+
+        methods: {
+            updatePwd(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        //请求服务器完成登录功能
+                        axios.post("emp/updateEmpPwd", "number=" + this.editFormData.number +
+                            "&pwd=" + this.editFormData.pass+"&oldpwd="+this.editFormData.old_pwd)
+                            .then(resp => {
+                                console.log(resp.data)
+                                console.log(resp.data === false)
+                                if (resp.data === false) {
+                                    //修改失败
+                                    this.$message.error('修改失败，请检查用户名和密码');
+
+                                } else {
+                                    //修改成功
+                                    top.location.href = "/";
+                                    this.$message({
+                                        message: '修改成功！请重新登录！',
+                                        type: 'success'
+                                    });
+
+                                }
+                            })
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                })
+
+            },
+            getEmpInfo() {
+                axios.post("emp/getInfo")
+                    .then(resp => {
+                        //将查询出的数据赋值
+                        this.editFormData = resp.data.data;
+                    })
+            }
+        },
+        mounted() {
+            //调用分页查询功能
+            this.getEmpInfo();
+
+        },
+
+    });
+</script>
+</html>

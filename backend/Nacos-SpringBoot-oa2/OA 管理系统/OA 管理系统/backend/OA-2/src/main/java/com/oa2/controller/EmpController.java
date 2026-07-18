@@ -38,6 +38,12 @@ public class EmpController {
 
     }
 
+    @PostMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "true";
+    }
+
     @PutMapping("/profile")
     public RESP updateProfile(@RequestBody Emp emp, HttpSession session) {
         Emp loginEmp = (Emp) session.getAttribute("emp");

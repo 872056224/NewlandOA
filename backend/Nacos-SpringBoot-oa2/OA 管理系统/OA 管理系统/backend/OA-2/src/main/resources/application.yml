@@ -72,6 +72,10 @@ logging:
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
 
+# DeepSeek AI 配置
+deepseek:
+  api-key: sk-6a795b8a2dc04730b8e42aee016295b7
+
 server:
   port: 8081
   servlet:

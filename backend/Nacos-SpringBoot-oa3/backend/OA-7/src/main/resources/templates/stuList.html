@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工后台管理系统</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div">
+    <b style="color: red; font-size: 20px;">员工信息管理</b>
+    <div style="float: right;margin-bottom: 10px">
+        <el-button @click="showAddStu" type="primary">添加员工</el-button>
+    </div>
+
+    <!-- 数据展现表格 -->
+    <el-table
+            :data="tableData.filter(data=>!search_users || data.name.toLowerCase().includes(search_users.toLowerCase()))">
+        <!--表格搜索框层-->
+        <el-table-column align="center">
+            <el-col slot="header" slot-scope="scope">
+                <i class="el-icon-menu"></i>
+                <el-input
+                        placeholder="请输员工名字"
+                        size="mini"
+                        style="width: 30%"
+                        v-model="search_users"></el-input>
+            </el-col>
+
+            <el-table-column align="center" label="工号" min-width="120" prop="number">
+            </el-table-column>
+            <el-table-column align="center" label="姓名" min-width="120" prop="name">
+            </el-table-column>
+            <el-table-column align="center" label="生日" min-width="140" prop="birthday">
+            </el-table-column>
+            <el-table-column align="center" label="地址" min-width="150" prop="address">
+            </el-table-column>
+            <el-table-column align="center" label="所属部门" min-width="140" prop="dept_name">
+            </el-table-column>
+            <el-table-column align="center" label="职务" min-width="140" prop="duty_name">
+            </el-table-column>
+            <el-table-column align="center" label="操作" min-width="180">
+                <template slot-scope="props">
+                    <el-button @click="showEditStu(props.row)" type="warning">编辑</el-button>
+                    <el-button @click="emp_info=props.row;dialogVisible=true" type="danger">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table-column>
+    </el-table>
+
+    <!--
+        分页组件
+          @size-change： 当改变每页条数时触发的函数
+          @current-change：当改变页码时触发的函数
+          current-page ：默认的页码
+          :page-sizes：每页条数选择框中显示的值
+          :page-size : 默认的每页条数
+          layout： 分页组件的布局
+              total（总条数）, sizes(每页条数), prev（上一页）, pager(所有的页码), next(下一页), jumper（跳转页码）
+          :total: 总条数
+    -->
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[5,8,12]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            layout="total, sizes, prev, pager, next, jumper"
+            style="text-align: center">
+    </el-pagination>
+
+    <el-dialog :visible.sync="dialogTableVisible4add" @close="resetForm('addForm')" title="添加员工信息">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="formData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="addForm">
+
+            <el-form-item label="员工姓名" prop="name">
+                <el-input v-model="formData.name"></el-input>
+            </el-form-item>
+            <el-form-item label="员工生日" prop="birthday">
+                <!--v-model : 双向绑定 -->
+                <el-input type="date" v-model="formData.birthday"></el-input>
+            </el-form-item>
+            <el-form-item label="员工地址" prop="address">
+                <el-input v-model="formData.address"></el-input>
+            </el-form-item>
+            <el-form-item label="所属部门" prop="dept_name">
+                <!--                <el-input v-model="formData.dept_name"></el-input>-->
+                <el-select placeholder="---请选择--" style="width: 100%" v-model="formData.dept_id">
+                    <el-option
+                            :key="item.dept_id"
+                            :label="item.dept_name"
+                            :value="item.dept_id"
+                            v-for="item in deptData">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="员工职务" prop="duty_name">
+                <el-select placeholder="---请选择--" style="width: 100%" v-model="formData.duty_id">
+                    <el-option
+                            :key="item.duty_id"
+                            :label="item.duty_name"
+                            :value="item.duty_id"
+                            v-for="item in dutyData">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button type="primary" v-on:click="addStu('addForm')">添加</el-button>
+                <el-button @click="resetForm('addForm')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    <el-dialog :visible.sync="dialogTableVisible4edit" @close="resetForm('editForm')" title="编辑员工信息">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="editFormData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="editForm">
+            <el-form-item label="员工工号" prop="number">
+                <el-input :disabled="true" v-model="editFormData.number"></el-input>
+            </el-form-item>
+            <el-form-item label="员工姓名" prop="name">
+                <el-input v-model="editFormData.name"></el-input>
+            </el-form-item>
+            <el-form-item label="员工生日" prop="birthday">
+                <!--v-model : 双向绑定 -->
+                <el-input type="date" v-model="editFormData.birthday"></el-input>
+            </el-form-item>
+            <el-form-item label="家庭地址" prop="address">
+                <el-input v-model="editFormData.address"></el-input>
+            </el-form-item>
+            <el-form-item label="所属部门" prop="dept_name">
+                <el-input :disabled="true" v-model="editFormData.dept_name"></el-input>
+            </el-form-item>
+            <el-form-item label="员工职务" prop="duty_name">
+                <el-input :disabled="true" v-model="editFormData.duty_name"></el-input>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button @click="updateStu('editForm')" type="warning">修改</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    <!--    删除提示框-->
+    <el-dialog
+            :visible.sync="dialogVisible"
+            title="警告"
+            width="30%">
+        <span>将同时清除员工的【考勤】数据！</span>
+        <span class="dialog-footer" slot="footer">
+    <el-button @click="dialogVisible = false">取 消</el-button>
+    <el-button @click="deleteStu(emp_info)" type="danger">删除</el-button>
+  </span>
+    </el-dialog>
+</div>
+</body>
+<script>
+    new Vue({
+        el: "#div",
+        data: {
+            emp_info: '',
+            dialogVisible: false,
+            search_users: '',
+            dialogTableVisible4add: false,  //添加窗口显示状态
+            dialogTableVisible4edit: false, //编辑窗口显示状态
+            formData: {},//添加表单的数据
+            editFormData: {},//编辑表单的数据
+            tableData: [],//表格数据
+            deptData: [],//部门信息
+            dutyData: [],
+            pagination: {
+                currentPage: 1, //当前页
+                pageSize: 8,    //每页显示条数
+                total: 0        //总条数
+            },
+
+            rules: {
+                number: [
+                    {required: true, message: '请输入学号', trigger: 'blur'},
+                    // {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                name: [
+                    {required: true, message: '请输入姓名', trigger: 'blur'},
+                    // {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                birthday: [
+                    {required: true, message: '请选择日期', trigger: 'change'}
+                ],
+                address: [
+                    {required: true, message: '请输入地址', trigger: 'blur'},
+                    // {min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur'}
+                ],
+                dept_id: [
+                    {required: true, message: '请选择部门', trigger: 'change'}
+                ],
+                duty_id: [
+                    {required: true, message: '请选择职务', trigger: 'change'}
+                ],
+            }
+        },
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //                    selectByPage：分页查询                    currentPage：当前页面                                每页展现5条数据                                                                                               总页数
+                axios.post("emp/selectByPage", "currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                        this.$message({
+                            message: '获取成功',
+                            type: 'success'
+                        });
+
+                        //将查询出的数据赋值tableData
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                this.pagination.pageSize = pageSize;
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                this.pagination.currentPage = pageNum;
+                this.selectByPage();
+            },
+
+            showAddStu() {
+
+                //新增员工的部门下拉框
+                axios.post("emp/getDeptData")
+                    .then(resp => {
+                        this.deptData = resp.data.data;
+                        console.log(resp.data, data)
+                    })
+                axios.post("emp/getDutyData")
+                    .then(resp => {
+                        this.dutyData = resp.data.data;
+                    })
+                //弹出窗口
+                this.dialogTableVisible4add = true;
+            },
+
+            //添加学生功能
+            addStu(formName) {
+                // 为表单绑定验证功能
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        let param = "name=" + this.formData.name +
+                            "&birthday=" + this.formData.birthday + "&address=" + this.formData.address +
+                            "&dept_id=" + this.formData.dept_id + "&duty_id=" + this.formData.duty_id +
+                            "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                        axios.post("emp/addEmp", param)
+                            .then(resp => {
+
+                                if (resp.data === '') {
+                                    this.$message.error('添加失败，员工已存在');
+                                } else {
+                                    this.$message({
+                                        message: '添加成功',
+                                        type: 'success'
+                                    });
+                                    //将查询出的数据赋值tableData
+                                    this.tableData = resp.data.data;
+                                    //设置分页参数
+                                    //当前页
+                                    this.pagination.currentPage = resp.data.pageNum;
+                                    //总条数
+                                    this.pagination.total = resp.data.total;
+                                }
+                            });
+                        //关闭添加窗口
+                        this.dialogTableVisible4add = false;
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            resetForm(addForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[addForm].resetFields();
+            },
+            showEditStu(row) {
+                //1. 弹出窗口
+                this.dialogTableVisible4edit = true;
+
+                //2. 显示表单数据
+                this.editFormData = {
+                    number: row.number,
+                    name: row.name,
+                    birthday: row.birthday,
+                    address: row.address,
+                    duty_name: row.duty_name,
+                    dept_name: row.dept_name,
+                }
+            },
+            //修改数据功能
+            updateStu(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        let param = "number=" + this.editFormData.number + "&name=" + this.editFormData.name +
+                            "&birthday=" + this.editFormData.birthday + "&address=" + this.editFormData.address +
+                            "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                        axios.post("emp/updateEmp", param)
+                            .then(resp => {
+                                this.$message({
+                                    message: '修改成功',
+                                    type: 'success'
+                                });
+                                //将查询出的数据赋值tableData
+                                this.tableData = resp.data.data;
+                                // this.tableData.id = resp.data.list;
+                                //设置分页参数
+                                //当前页
+                                this.pagination.currentPage = resp.data.pageNum;
+                                //总条数
+                                this.pagination.total = resp.data.total;
+                            })
+                        //关闭编辑窗口
+                        this.dialogTableVisible4edit = false;
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            //删除数据功能
+            deleteStu(row) {
+                this.dialogVisible=false
+                console.log(row.number);
+                let param = "number=" + row.number +
+                    "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                axios.post("emp/delete", param)
+                    .then(resp => {
+                        console.log(resp)
+                        if (resp.data === '') {
+                            this.$message.error('删除失败');
+                        } else {
+                            this.$message({
+                                message: '删除成功',
+                                type: 'success'
+                            });
+                            //将查询出的数据赋值tableData
+                            this.tableData = resp.data.data;
+                            //设置分页参数
+                            //当前页
+                            this.pagination.currentPage = resp.data.pageNum;
+                            //总条数
+                            this.pagination.total = resp.data.total;
+                        }
+
+                    })
+            },
+        },
+        mounted() {
+            //调用分页查询功能
+            this.selectByPage();
+
+        }
+    });
+</script>
+</html>

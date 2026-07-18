@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工管理系统</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div">
+    <b style="color: red; font-size: 20px;">签到时间列表</b>
+    <!-- 数据展现表格 -->
+    <el-table :data="tableData">
+        <el-table-column label="签到日期" prop="date" min-width="180" align="center">
+        </el-table-column>
+        <el-table-column label="操作" min-width="200" align="center">
+            <template slot-scope="props">
+                <el-button @click="showHistory(props.row)" type="warning">查看详细信息</el-button>
+            </template>
+        </el-table-column>
+    </el-table>
+
+
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[5,8,12]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+
+
+    <el-dialog :visible.sync="dialogTableVisible4edit" @close="resetForm('editForm')" title="查看具体签到信息" width="450px">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :label-position="right" :model="editFormData" :rules="rules" class="demo-ruleForm" label-width="100px"
+                 ref="editForm" style="margin-right: 5px">
+            <el-form-item label="查看的日期：" prop="signDate">
+                <el-input :disabled="true" style="background-color: white; width: 150px;"
+                          v-model="editFormData.signDate"></el-input>
+            </el-form-item>
+            <el-form-item label="已签到人数：" prop="signCount">
+                <el-input :disabled="true" style="background-color: white; width: 150px;"
+                          v-model="editFormData.signCount"></el-input>
+                <el-button @click="showSignCount()" type="warning">查看详情</el-button>
+            </el-form-item>
+            <el-form-item label="未签到人数：" prop="noSignCount">
+                <el-input :disabled="true" style="background-color: white; width: 150px;"
+                          v-model="editFormData.noSignCount"></el-input>
+                <el-button @click="showNoSignCount()" type="warning">查看详情</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+</div>
+</body>
+<script>
+
+    new Vue({
+        el: "#div",
+        data: {
+            tableData: [],//表格数据
+            dialogTableVisible4edit: false,
+            editFormData: {},
+            pagination: {
+                currentPage: 1, //当前页
+                pageSize: 8,    //每页显示条数
+                total: 0        //总条数
+            },
+
+        },
+
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //                    selectByPage：分页查询                    currentPage：当前页面                                每页展现5条数据                                                                                               总页数
+                axios.post("sign/selectDaySignList", "currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                        if (resp.data === '') {
+                            this.$message.error('数据为空');
+                        } else {
+                            this.$message({
+                                message: '获取成功',
+                                type: 'success'
+                            });
+                            //将查询出的数据赋值tableData
+                            console.log(resp.data)
+                            this.tableData = resp.data.data;
+                            //设置分页参数
+                            //当前页
+                            this.pagination.currentPage = resp.data.pageNum;
+                            //总条数
+                            this.pagination.total = resp.data.total;
+                        }
+                    })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                this.pagination.pageSize = pageSize;
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                this.pagination.currentPage = pageNum;
+                this.selectByPage();
+            },
+            showHistory(row) {
+                console.log(row)
+                this.dialogTableVisible4edit = true;
+                this.editFormData = {
+                    signDate: row.date,
+                    signCount: row.yc,
+                    noSignCount: row.nc,
+                }
+            },
+            //跳转到已签到页面
+            showSignCount() {
+                location.href = "/stuSign";
+                this.dialogTableVisible4edit = false;
+
+            },
+            //跳转到未签到页面
+            showNoSignCount() {
+                location.href = "/stuNoSign";
+                this.dialogTableVisible4edit = false;
+            },
+
+        },
+        mounted() {
+            //调用分页查询功能
+            this.selectByPage();
+        }
+    });
+</script>
+</html>

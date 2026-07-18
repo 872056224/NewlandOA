@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工后台管理系统</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div">
+    <b style="color: red; font-size: 20px;">职务信息管理</b>
+    <div style="float: right;">
+        <el-button @click="showAddStu" type="primary">添加职务</el-button>
+    </div>
+
+    <!-- 数据展现表格 -->
+    <el-table :data="tableData">
+        <el-table-column label="职务序号" prop="duty_id" min-width="130" align="center">
+        </el-table-column>
+        <el-table-column label="职务名" prop="duty_name" min-width="150" align="center">
+        </el-table-column>
+        <el-table-column label="职务人数" prop="duty_num"  min-width="130" align="center">
+        </el-table-column>
+        <el-table-column label="操作" min-width="160" align="center">
+            <template slot-scope="props">
+                <el-button @click="showEditStu(props.row)" type="warning">修改职务</el-button>
+                <!--                <el-button type="danger" @click="deleteStu(props.row)">删除</el-button>-->
+            </template>
+        </el-table-column>
+    </el-table>
+
+    <!--
+        分页组件
+          @size-change： 当改变每页条数时触发的函数
+          @current-change：当改变页码时触发的函数
+          current-page ：默认的页码
+          :page-sizes：每页条数选择框中显示的值
+          :page-size : 默认的每页条数
+          layout： 分页组件的布局
+              total（总条数）, sizes(每页条数), prev（上一页）, pager(所有的页码), next(下一页), jumper（跳转页码）
+          :total: 总条数
+    -->
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[8,10,12]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+
+    <el-dialog :visible.sync="dialogTableVisible4add" @close="resetForm('addForm')" title="添加职务信息">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="formData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="addForm">
+            <el-form-item label="职务名" prop="duty_name">
+                <el-input v-model="formData.duty_name"></el-input>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button @click="addDuty('addForm')" type="primary">添加</el-button>
+                <el-button @click="resetForm('addForm')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    <el-dialog :visible.sync="dialogTableVisible4edit" @close="resetForm('editForm')" title="编辑职务信息">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="editFormData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="editForm">
+            <el-form-item label="职务序号" prop="duty_id">
+                <el-input :disabled="true" v-model="editFormData.duty_id"></el-input>
+            </el-form-item>
+            <el-form-item label="职务名" prop="duty_name">
+                <el-input v-model="editFormData.duty_name"></el-input>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button type="warning" v-on:click="updateStu('editForm')">修改</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>
+</body>
+<script>
+
+    new Vue({
+        el: "#div",
+        data: {
+            dialogTableVisible4add: false,  //添加窗口显示状态
+            dialogTableVisible4edit: false, //编辑窗口显示状态
+            formData: {},//添加表单的数据
+            editFormData: {},//编辑表单的数据
+            tableData: [],//表格数据
+            pagination: {
+                currentPage: 1, //当前页
+                pageSize: 8,    //每页显示条数
+                total: 0        //总条数
+            },
+            rules: {
+                duty_id: [
+                    {required: true, message: '请输入职务序号', trigger: 'blur'}
+                ],
+                duty_name: [
+                    {required: true, message: '请输入职务名', trigger: 'blur'}
+                ],
+            }
+        },
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //                    selectByPage：分页查询                    currentPage：当前页面                                每页展现5条数据                                                                                               总页数
+                axios.post("duty/selectAllDutyAndNum", "currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                        //将查询出的数据赋值tableData
+
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                this.pagination.pageSize = pageSize;
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                this.pagination.currentPage = pageNum;
+                this.selectByPage();
+            },
+
+
+            showAddStu() {
+                //弹出窗口
+                this.dialogTableVisible4add = true;
+            },
+
+            //添加部门功能
+            addDuty(formName) {
+                // 为表单绑定验证功能
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        let param = "duty_name=" + this.formData.duty_name +
+                            "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                        axios.post("duty/addDuty", param)
+                            .then(resp => {
+                                if (resp.data === '') {
+                                    this.$message.error('添加失败，该职务已存在');
+                                } else {
+                                    this.$message({
+                                        message: '添加成功',
+                                        type: 'success'
+                                    });
+                                    //将查询出的数据赋值tableData
+                                    this.tableData = resp.data.data;
+                                    //设置分页参数
+                                    //当前页
+                                    this.pagination.currentPage = resp.data.pageNum;
+                                    //总条数
+                                    this.pagination.total = resp.data.total;
+                                }
+
+                            })
+                        //关闭添加窗口
+                        this.dialogTableVisible4add = false;
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            resetForm(addForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[addForm].resetFields();
+            },
+            showEditStu(row) {
+                //1. 弹出窗口
+                this.dialogTableVisible4edit = true;
+
+                //2. 显示表单数据
+                this.editFormData = {
+                    duty_id: row.duty_id,
+                    duty_name: row.duty_name,
+                }
+            },
+            //修改数据功能
+            updateStu(formName) {
+                // 为表单绑定验证功能
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        let param = "duty_id=" + this.editFormData.duty_id + "&duty_name=" + this.editFormData.duty_name +
+                            "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                        axios.post("duty/updateDutyNameById", param)
+                            .then(resp => {
+                                if (resp.data === '') {
+                                    this.$message.error('修改失败，该职务已存在');
+                                    //将查询出的数据赋值tableData
+                                } else {
+                                    this.$message({
+                                        message: '修改成功',
+                                        type: 'success'
+                                    });
+                                    //将查询出的数据赋值tableData
+                                    this.tableData = resp.data.data;
+                                    //设置分页参数
+                                    //当前页
+                                    this.pagination.currentPage = resp.data.pageNum;
+                                    //总条数
+                                    this.pagination.total = resp.data.total;
+                                }
+                            });
+                        //关闭编辑窗口
+                        this.dialogTableVisible4edit = false;
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            resetForm(editForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.editFormData = {};
+                //清除表单的校验数据
+                this.$refs[editForm].resetFields();
+            },
+
+        },
+        mounted() {
+            //调用分页查询功能
+            this.selectByPage();
+        }
+    });
+</script>
+</html>

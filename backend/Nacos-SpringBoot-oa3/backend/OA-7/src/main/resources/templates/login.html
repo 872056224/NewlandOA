@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>管理员登录页面</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js" type="text/javascript"></script>
+    <script src="../static/js/axios-0.18.0.js" type="text/javascript"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <style lang="scss" scoped>
+        .login-box {
+            border: 1px solid #DCDFE6;
+            background: white;
+            width: 350px;
+            padding: 35px 35px 15px 35px;
+            border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            box-shadow: 0 0 25px #909399;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+        }
+
+        .login-title {
+            text-align: center;
+            margin: 0 auto 40px auto;
+            color: #303133;
+        }
+
+        body {
+            background: url("static/img/background.jpg") no-repeat;
+            background-size: cover;
+        }
+
+        body,html{
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+<div id="app">
+    <el-form :model="form" :rules="rules" class="login-box" label-width="80px" ref="loginForm">
+        <h3 class="login-title">欢迎登录</h3>
+
+        <el-form-item label="账号" prop="username">
+            <el-input placeholder="请输入管理员账号" type="text" v-model="form.username"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+            <el-input placeholder="请输入密码" type="password" v-model="form.password"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" v-on:click="onSubmit('loginForm')">登录</el-button>
+            <el-button @click="showregister" type="primary">注册</el-button>
+        </el-form-item>
+    </el-form>
+
+    <el-dialog :visible.sync="dialogTableVisible4add" @close="resetForm('registerForm')" title="注册页面">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="formData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="registerForm">
+            <el-form-item label="姓名" prop="username">
+                <el-input placeholder="请输入姓名" type="text" v-model="formData.username"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+                <el-input placeholder="请输入密码" type="text" v-model="formData.password"></el-input>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button type="primary" v-on:click="register('registerForm')">注册</el-button>
+                <el-button @click="resetForm('registerForm')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>
+</body>
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            dialogTableVisible4add: false,  //添加窗口显示状态
+            formData: {
+                username: '',
+                password: '',
+            },//注册表单的数据
+            form: {
+                username: '',
+                password: '',
+            },
+            rules: { //校验规则
+                username: [
+                    {required: true, message: '请输入用户名', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                password: [
+                    {required: true, message: '请输入密码', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ]
+            }
+        },
+
+
+        methods: {
+            onSubmit(formName) {
+                // 为表单绑定验证功能
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        //请求服务器完成登录功能
+                        axios.post("login", "name=" + this.form.username +
+                            "&pwd=" + this.form.password)
+                            .then(resp => {
+                                if (resp.data===true) {
+                                    //登录成功，跳转到首页
+                                    location.href = "/main";
+                                    this.$message({
+                                        message: '登陆成功！',
+                                        type: 'success'
+                                    });
+
+                                } else {
+                                    //登录失败，跳转到登录页面
+                                    this.$message.error('登录失败，请检查用户名和密码');
+                                }
+                            })
+                    } else {
+                        return false;
+                    }
+                });
+
+            },
+            /*注册弹窗弹出*/
+            showregister() {
+                //弹出窗口
+                this.dialogTableVisible4add = true;
+            },
+            //注册功能
+            register(formName) {
+                // 为表单绑定验证功能
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        //请求服务器完成登录功能
+                        axios.post("register", "name=" + this.formData.username +
+                            "&pwd=" + this.formData.password)
+                            .then(resp => {
+                                if (resp.data === true) {
+                                    //注册成功，跳转到首页
+                                    this.$message({
+                                        message: '注册成功',
+                                        type: 'success'
+                                    });
+                                } else {
+                                    //注册失败，跳转到登录页面
+                                    this.$message.error('注册失败，用户名重复');
+                                }
+                            })
+                        //关闭添加窗口
+                        this.dialogTableVisible4add = false;
+                    } else {
+                        return false;
+                    }
+                });
+
+            },
+            resetForm(registerForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[registerForm].resetFields();
+            },
+        }
+    });
+</script>
+</html>

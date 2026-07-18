@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工后台管理系统</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div">
+    <b style="color: red; font-size: 20px;">员工人事变动</b>
+    <div style="float: right;">
+
+    </div>
+    <!-- 数据展现表格 -->
+    <el-table
+            :data="tableData.filter(data=>!search_users || data.dept_name.toLowerCase().includes(search_users.toLowerCase()))"
+            style="margin-top: 13px">
+        <!--表格搜索框层-->
+        <el-table-column align="center">
+            <el-col slot="header" slot-scope="scope">
+                <i class="el-icon-menu"></i>
+                <el-input
+                        placeholder="请输入部门名称"
+                        size="mini"
+                        style="width: 30%"
+                        v-model="search_users"></el-input>
+            </el-col>
+            <el-table-column label="工号" prop="number" min-width="120" align="center">
+            </el-table-column>
+            <el-table-column label="姓名" prop="name" min-width="120" align="center">
+            </el-table-column>
+            <el-table-column label="所属部门" prop="dept_name" min-width="140" align="center">
+            </el-table-column>
+            <el-table-column label="职务" prop="duty_name" min-width="140" align="center">
+            </el-table-column>
+            <el-table-column label="操作"  min-width="160"  align="center">
+                <template slot-scope="props">
+                    <el-button @click="showEditStu(props.row)" type="warning">变动</el-button>
+                </template>
+            </el-table-column>
+        </el-table-column>
+    </el-table>
+
+    <!--
+        分页组件
+          @size-change： 当改变每页条数时触发的函数
+          @current-change：当改变页码时触发的函数
+          current-page ：默认的页码
+          :page-sizes：每页条数选择框中显示的值
+          :page-size : 默认的每页条数
+          layout： 分页组件的布局
+              total（总条数）, sizes(每页条数), prev（上一页）, pager(所有的页码), next(下一页), jumper（跳转页码）
+          :total: 总条数
+    -->
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[5,8,12]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            style="text-align: center"
+            layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+
+    <el-dialog :visible.sync="dialogTableVisible4edit" @close="resetForm('editForm')" title="修改员工职务">
+        <!--
+            :model="formData": 关联数据
+            :rules: 关联校验规则
+            ref： 在获取表单对象时使用
+        -->
+        <el-form :model="editFormData" :rules="rules" class="demo-ruleForm" label-width="100px" ref="editForm">
+            <el-form-item label="员工工号" prop="number">
+                <el-input :disabled="true" v-model="editFormData.number"></el-input>
+            </el-form-item>
+            <el-form-item label="所属部门" prop="dept_name">
+                <el-select placeholder="---请选择--" style="width: 100%" v-model="editFormData.dept_name">
+                    <el-option
+                            :key="item.dept_id"
+                            :label="item.dept_name"
+                            :value="item.dept_name"
+                            v-for="item in deptData">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="员工职务" prop="duty_name">
+                <el-select placeholder="---请选择--" style="width: 100%" v-model="editFormData.duty_name">
+                    <el-option
+                            :key="item.duty_id"
+                            :label="item.duty_name"
+                            :value="item.duty_name"
+                            v-for="item in dutyData">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item align="right">
+                <el-button @click="updateWork()" type="warning">修改</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>
+</body>
+<script>
+
+    new Vue({
+        el: "#div",
+        data: {
+            search_users: '',
+            dialogTableVisible4add: false,  //添加窗口显示状态
+            dialogTableVisible4edit: false, //编辑窗口显示状态
+            formData: {},//添加表单的数据
+            editFormData: {},//编辑表单的数据
+            tableData: [],//表格数据
+            deptData: [],
+            dutyData: [],
+            pagination: {
+                currentPage: 1, //当前页
+                pageSize: 8,    //每页显示条数
+                total: 0        //总条数
+            },
+            rules: {
+                number: [
+                    {required: true, message: '请输入学号', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                name: [
+                    {required: true, message: '请输入姓名', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                /*                birthday: [
+                                    {required: true, message: '请选择日期', trigger: 'change'}
+                                ],
+                                address: [
+                                    {required: true, message: '请输入地址', trigger: 'blur'},
+                                    {min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur'}
+                                ],*/
+                dept_name: [
+                    {required: true, message: '请选择部门', trigger: 'change'}
+                ],
+                duty_name: [
+                    {required: true, message: '请选择职务', trigger: 'change'}
+                ],
+            }
+        },
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //                    selectByPage：分页查询                    currentPage：当前页面                                每页展现5条数据                                                                                               总页数
+                axios.post("emp/selectByPage", "currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                        this.$message({
+                            message: '查询成功',
+                            type: 'success'
+                        });
+                        //将查询出的数据赋值tableData
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                this.pagination.pageSize = pageSize;
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                this.pagination.currentPage = pageNum;
+                this.selectByPage();
+            },
+
+
+            showAddStu() {
+
+                //弹出窗口
+                this.dialogTableVisible4add = true;
+            },
+
+            resetForm(addForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[addForm].resetFields();
+            },
+            showEditStu(row) {
+                //新增员工的部门下拉框
+                axios.post("emp/getDeptData")
+                    .then(resp => {
+                        this.deptData = resp.data.data;
+                    })
+                axios.post("emp/getDutyData")
+                    .then(resp => {
+                        this.dutyData = resp.data.data;
+                    })
+                //1. 弹出窗口
+                this.dialogTableVisible4edit = true;
+
+                //2. 显示表单数据
+                this.editFormData = {
+                    number: row.number,
+                    duty_name: row.duty_name,
+                    dept_name: row.dept_name,
+                }
+            },
+            //修改数据功能
+            updateWork() {
+                let dept_id1;
+                let duty_id1;
+                for (let a in this.deptData) {
+                    if (this.deptData[a].dept_name === this.editFormData.dept_name) {
+                        dept_id1 = this.deptData[a].dept_id
+                    }
+                }
+                for (let a in this.dutyData) {
+                    if (this.dutyData[a].duty_name === this.editFormData.duty_name) {
+                        duty_id1 = this.dutyData[a].duty_id
+                    }
+                }
+                console.log("&dept_id=" + dept_id1 + "&duty_id=" + duty_id1)
+                let param = "number=" + this.editFormData.number +
+                    "&dept_id=" + dept_id1 + "&duty_id=" + duty_id1 +
+                    "&currentPage=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize;
+                axios.post("emp/updateDD", param)
+                    .then(resp => {
+                        this.$message({
+                            message: '变动成功',
+                            type: 'success'
+                        });
+                        //将查询出的数据赋值tableData
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+                //关闭编辑窗口
+                this.dialogTableVisible4edit = false;
+            },
+        },
+        mounted() {
+            //调用分页查询功能
+            this.selectByPage();
+        }
+    });
+</script>
+</html>

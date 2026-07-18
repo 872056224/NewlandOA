@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>员工个人中心</title>
+    <link rel="stylesheet" href="../static/element-ui/lib/theme-chalk/index.css">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div" style="width: 600px;position: absolute;left: 50%;top: 40%;transform: translate(-50%,-60%)" >
+    <p style="color: slategrey; font-size: 20px;font-weight: bolder; margin-left: 20px;">个人信息</p>
+    <div style="margin: 20px;"></div>
+    <el-form :label-position="labelPosition" :rules="rules"  ref="editForm" label-width="80px" style="margin-right: 5px" :model="editFormData">
+        <el-form-item label="工号" prop="number">
+            <el-input v-model="editFormData.number" :disabled="true" style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item label="名字" prop="name">
+            <el-input v-model="editFormData.name" style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item label="出生" prop="birthday">
+            <el-input v-model="editFormData.birthday" type="date" style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item label="地址" prop="address">
+            <el-input v-model="editFormData.address" style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item label="部门" prop="dept_name">
+            <el-input v-model="editFormData.dept_name" :disabled="true"  style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item label="职务" prop="duty">
+            <el-input v-model="editFormData.duty_name" :disabled="true" style="width: 100%"></el-input>
+        </el-form-item>
+        <el-form-item align="right">
+            <el-button type="warning" @click="updateStu('editForm')">确认修改</el-button>
+        </el-form-item>
+    </el-form>
+
+</div>
+</body>
+<script>
+
+    new Vue({
+        el: "#div",
+        data: {
+            editFormData: {},//编辑表单的数据
+            tableData:[],
+            rules: {
+                number: [
+                    {required: true, message: '请输入学号', trigger: 'blur'},
+                ],
+                name: [
+                    {required: true, message: '请输入姓名', trigger: 'blur'},
+                    {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                ],
+                birthday: [
+                    {required: true, message: '请选择日期', trigger: 'change'}
+                ],
+                address: [
+                    {required: true, message: '请输入地址', trigger: 'blur'},
+                    {min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur'}
+                ],
+                dept_name: [
+                    {required: true, message: '请选择部门', trigger: 'change'}
+                ],
+                duty_name: [
+                    {required: true, message: '请选择职务', trigger: 'change'}
+                ],
+                old_pwd:[
+                    {required: true, message: '请输入您原来的密码', trigger: 'change'}
+                ],
+                pass:[
+                    {required: true, message: '请输入您的新密码', trigger: 'change'},
+                    {min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur'}
+                ],
+                checkPass:[
+                    {required: true, message: '请输入您的新密码', trigger: 'change'},
+                    {min: 3, max: 200, message: '长度在 3 到 20 个字符', trigger: 'blur'}
+                ],
+            },
+        },
+
+        data() {
+            return {
+
+                labelPosition: 'right',
+                editFormData: {
+                    number: 0,
+                    name: '',
+                    old_pwd:'',
+                    birthday: '',
+                    address: '',
+                    dept_name: '',
+                    duty: '',
+                    pass: '',
+                    checkPass:''
+                },
+                rules: {
+                    number: [
+                        {required: true, message: '请输入学号', trigger: 'blur'},
+                    ],
+                    name: [
+                        {required: true, message: '请输入姓名', trigger: 'blur'},
+                        {min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur'}
+                    ],
+                    birthday: [
+                        {required: true, message: '请选择日期', trigger: 'change'}
+                    ],
+                    address: [
+                        {required: true, message: '请输入地址', trigger: 'blur'},
+                        {min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur'}
+                    ],
+                    dept_name: [
+                        {required: true, message: '请选择部门', trigger: 'change'}
+                    ],
+                    duty_name: [
+                        {required: true, message: '请选择职务', trigger: 'change'}
+                    ],
+                    old_pwd:[
+                        {required: true, message: '请输入您原来的密码', trigger: 'change'}
+                    ],
+                    pass:[
+                        {required: true, message: '请输入您的新密码', trigger: 'change'},
+                        {min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur'}
+                    ],
+                    checkPass:[
+                        {required: true, message: '请输入您的新密码', trigger: 'change'},
+                        {min: 3, max: 200, message: '长度在 3 到 20 个字符', trigger: 'blur'}
+                    ],
+                },
+            };
+        },
+
+        methods: {
+            //修改个人信息
+            updateStu(formName) {
+                this.$refs[formName].validate((valid) => {
+
+                    if (valid) {
+                            let param = "number=" + this.editFormData.number + "&name=" + this.editFormData.name +
+                                "&birthday=" + this.editFormData.birthday + "&address=" + this.editFormData.address;
+                            axios.post("emp/updateInfo", param)
+                                .then(resp => {
+                                    if (resp.data === "") {
+                                        this.$message.error('修改失败');
+                                    }else {
+                                        this.$message({
+                                            message: '修改成功',
+                                            type: 'success'
+                                        });
+                                        //将查询出的数据赋值tableData
+                                        this.editFormData = resp.data.data;
+                                    }
+                                })
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            getEmpInfo() {
+                axios.post("emp/getInfo")
+                    .then(resp => {
+                        console.log(resp.data.data)
+                        //将查询出的数据赋值
+                        this.editFormData = resp.data.data;
+                    })
+            }
+        },
+        mounted() {
+            //调用
+            this.getEmpInfo();
+            console.log(JSON.parse(sessionStorage.getItem("emp")))
+        },
+
+    });
+</script>
+</html>

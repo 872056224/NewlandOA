@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>员工管理系统</title>
+    <link href="../static/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <script src="../static/js/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="div">
+    <b style="color: red; font-size: 20px;">已签到员工</b>
+    <div style="float: right;margin-bottom: 10px">
+        <el-button @click="showRest" type="primary">查看今日</el-button>
+    </div>
+
+    <!-- 数据展现表格 -->
+    <el-table :data="tableData.filter(data=>!search_users || data.number.toLowerCase().includes(search_users.toLowerCase()))">
+        <!--表格搜索框层-->
+        <el-table-column align="center">
+            <el-col slot="header" slot-scope="scope">
+                <i class="el-icon-menu"></i>
+                <el-input
+                        placeholder="请输员工工号"
+                        size="mini"
+                        style="width: 30%"
+                        v-model="search_users"></el-input>
+            </el-col>
+            <el-table-column label="日期" prop="signDate" min-width="200px" align="center">
+            </el-table-column>
+            <el-table-column label="工号" prop="number" min-width="120" align="center">
+            </el-table-column>
+            <el-table-column label="姓名" prop="name" min-width="120" align="center">
+            </el-table-column>
+            <el-table-column label="部门" prop="dept_name" min-width="120" align="center">
+            </el-table-column>
+            <el-table-column label="签到地址" prop="sign_address" min-width="180" align="center">
+            </el-table-column>
+            <el-table-column label="签到状态"  min-width="150" align="center">
+                <template slot-scope="scope">
+                    <el-tag effect="dark"
+                            :type="scope.row.state === '已签到' ? 'success' : 'danger'"
+                            disable-transitions>{{scope.row.state}}</el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" min-width="180" align="center">
+                <template slot-scope="props">
+                    <el-button :disabled="props.row.tag===0" :type="props.row.tag===0?'info':'danger'"
+                               @click="emp_info=props.row;dialogVisible=true">
+                        {{props.row.tag === 0 ? '超期不可修改' : '驳回'}}
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table-column>
+    </el-table>
+
+    <!--
+        分页组件
+          @size-change： 当改变每页条数时触发的函数
+          @current-change：当改变页码时触发的函数
+          current-page ：默认的页码
+          :page-sizes：每页条数选择框中显示的值
+          :page-size : 默认的每页条数
+          layout： 分页组件的布局
+              total（总条数）, sizes(每页条数), prev（上一页）, pager(所有的页码), next(下一页), jumper（跳转页码）
+          :total: 总条数
+    -->
+
+    <el-pagination
+            :current-page="pagination.currentPage"
+            :page-size="pagination.pageSize"
+            :page-sizes="[6,8,10]"
+            :total="pagination.total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+<!--    驳回弹框-->
+    <el-dialog
+            title="警告"
+            :visible.sync="dialogVisible"
+            width="30%"
+            :before-close="handleClose">
+        <span>确定要驳回该员工的签到吗？</span>
+        <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogVisible = false">取 消</el-button>
+    <el-button type="danger" @click="updateStu(emp_info)">驳回</el-button>
+  </span>
+    </el-dialog>
+</div>
+</body>
+<script>
+    new Vue({
+        el: "#div",
+        data: {
+            emp_info:'',
+            dialogVisible:false,
+            flag:true,
+            search_users: '',
+            formData: {},//添加表单的数据
+            editFormData: {},//编辑表单的数据
+            tableData: [],//表格数据
+            pagination: {
+                currentPage: 1, //当前页
+                pageSize: 8,    //每页显示条数
+                total: 0        //总条数
+            },
+            rules: {
+                number: [
+                    {required: true, message: '请输入学号', trigger: 'blur'},
+
+                ],
+                name: [
+                    {required: true, message: '请输入姓名', trigger: 'blur'},
+
+                ],
+                birthday: [
+                    {required: true, message: '请修改', trigger: 'change'}
+                ],
+                address: [
+                    {required: true, message: '请输入班级', trigger: 'blur'},
+                ],
+            }
+        },
+        methods: {
+            //分页查询功能
+            selectByPage() {
+                //                    selectByPage：分页查询                    currentPage：当前页面                                                                                                               总页数
+                axios.post("sign/selectYesByPage", "currentPage=" + this.pagination.currentPage +
+                    "&pageSize=" + this.pagination.pageSize)
+                    .then(resp => {
+                        this.$message({
+                            message: '获取成功',
+                            type: 'success'
+                        });
+                        console.log(resp.data.data)
+                        //将查询出的数据赋值tableData
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+            },
+            //改变每页条数时执行的函数
+            handleSizeChange(pageSize) {
+                //修改分页查询的参数
+                this.pagination.pageSize = pageSize;
+                //重新执行查询
+                this.selectByPage();
+            },
+            //改变页码时执行的函数
+            handleCurrentChange(pageNum) {
+                //修改分页查询的参数
+                this.pagination.currentPage = pageNum;
+                //重新执行查询
+                this.selectByPage();
+            },
+
+            resetForm(addForm) {
+                //双向绑定，输入的数据都赋值给了formData， 清空formData数据
+                this.formData = {};
+                //清除表单的校验数据
+                this.$refs[addForm].resetFields();
+            },
+
+            //修改数据功能
+            updateStu(row) {
+                this.dialogVisible=false
+                let param = "number=" + row.number + "&currentPage=" +
+                    this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize +
+                    "&state=未签到" + "&signDate=" + row.signDate;
+                axios.post("sign/updateStateYes", param)
+                    .then(resp => {
+                        if (resp.data === null) {
+                            this.$message.error('驳回签到失败');
+                        }
+                        this.$message({
+                            message: '驳回签到成功',
+                            type: 'success'
+                        });
+                        //将查询出的数据赋值tableData
+                        this.tableData = resp.data.data;
+                        //设置分页参数
+                        //当前页
+                        this.pagination.currentPage = resp.data.pageNum;
+                        //总条数
+                        this.pagination.total = resp.data.total;
+                    })
+                //关闭编辑窗口
+                this.dialogTableVisible4edit = false;
+            },
+            showRest: function () {
+                if (this.flag) {
+                    let param = "currentPage=" +
+                        this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize
+                    axios.post("sign/selectToDayYesByPage", param)
+                        .then(resp => {
+                            this.$message({
+                                message: '获取成功',
+                                type: 'success'
+                            });
+                            //将查询出的数据赋值tableData
+                            this.tableData = resp.data.data;
+                            //设置分页参数
+                            //当前页
+                            this.pagination.currentPage = resp.data.pageNum;
+                            //总条数
+                            this.pagination.total = resp.data.total;
+                        })
+                    this.flag = false
+                }else {
+                    this.selectByPage();
+                    this.flag = true
+                }
+
+            }
+        },
+        mounted() {
+            //调用分页查询功能
+            this.selectByPage();
+        }
+    });
+</script>
+</html>

@@ -32,3 +32,4 @@ __pycache__/
 
 # Claude config (API keys)
 .claude/
+dump.rdb
