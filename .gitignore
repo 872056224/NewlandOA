@@ -33,3 +33,8 @@ __pycache__/
 # Claude config (API keys)
 .claude/
 dump.rdb
+
+# Local config override (API keys, local env)
+application-local.yml
+application-local.yaml
+*local.yml
