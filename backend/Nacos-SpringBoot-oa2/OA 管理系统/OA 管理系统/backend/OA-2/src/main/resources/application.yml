@@ -72,9 +72,9 @@ logging:
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
 
-# DeepSeek AI 配置
+# DeepSeek AI 配置（通过环境变量设置，不提交到git）
 deepseek:
-  api-key: sk-6a795b8a2dc04730b8e42aee016295b7
+  api-key: ${DEEPSEEK_API_KEY:}
 
 server:
   port: 8081

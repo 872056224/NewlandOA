@@ -26,7 +26,7 @@ import java.util.Map;
 public class ChatController {
 
     private static final String DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
-    @Value("${deepseek.api-key}")
+    @Value("${deepseek.api-key:}")
     private String apiKey;
     private static final String DEEPSEEK_MODEL = "deepseek-chat";
 
@@ -57,10 +57,40 @@ public class ChatController {
 
             // 直接调 DeepSeek，带上知识库上下文
             String answer = callDeepSeek(question, kbContext.toString());
+
+            // 从知识库中提取相关问题作为推荐
+            List<String> related = new ArrayList<>();
+            for (KbDoc doc : allKb) {
+                if (!doc.getQuestion().equals(question) && related.size() < 3) {
+                    // 检查问题或关键词是否与用户提问相关
+                    String[] keywords = question.split("[，,、\\s]+");
+                    boolean match = false;
+                    for (String kw : keywords) {
+                        if (kw.length() >= 2 && (doc.getQuestion().contains(kw) ||
+                            (doc.getKeywords() != null && doc.getKeywords().contains(kw)))) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        related.add(doc.getQuestion());
+                    }
+                }
+            }
+            // 如果关键词没匹配到，补充热门前3个
+            if (related.isEmpty()) {
+                List<String> hot = kbDocDao.selectHotQuestions();
+                for (int i = 0; i < Math.min(3, hot.size()); i++) {
+                    if (!hot.get(i).equals(question)) {
+                        related.add(hot.get(i));
+                    }
+                }
+            }
+
             JSONObject data = new JSONObject();
             data.put("answer", answer);
-            data.put("related", new ArrayList<>());
-            data.put("suggestions", new ArrayList<>());
+            data.put("related", related);
+            data.put("suggestions", related);
             return RESP.ok(data);
         } catch (Exception e) {
             e.printStackTrace();

@@ -13,7 +13,6 @@
 
     <!-- 子模块 -->
     <modules>
-        <module>gateway</module>
         <module>OA-2</module>
     </modules>
 
