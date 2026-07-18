@@ -47,26 +47,16 @@ public class ChatController {
         }
         question = question.trim();
 
-        // 1. 先搜知识库
-        KbDoc kb = kbDocDao.searchByKeyword(question);
-        if (kb != null) {
-            JSONObject data = new JSONObject();
-            data.put("answer", kb.getAnswer());
-            List<KbDoc> all = kbDocDao.selectAllEnabled();
-            List<String> related = new ArrayList<>();
-            for (KbDoc doc : all) {
-                if (!doc.getQuestion().equals(kb.getQuestion()) && related.size() < 3) {
-                    related.add(doc.getQuestion());
-                }
-            }
-            data.put("related", related);
-            data.put("suggestions", related);
-            return RESP.ok(data);
-        }
-
-        // 2. 调 DeepSeek
         try {
-            String answer = callDeepSeek(question);
+            // 收集知识库内容作为参考上下文
+            List<KbDoc> allKb = kbDocDao.selectAllEnabled();
+            StringBuilder kbContext = new StringBuilder();
+            for (KbDoc doc : allKb) {
+                kbContext.append("Q: ").append(doc.getQuestion()).append("\nA: ").append(doc.getAnswer()).append("\n\n");
+            }
+
+            // 直接调 DeepSeek，带上知识库上下文
+            String answer = callDeepSeek(question, kbContext.toString());
             JSONObject data = new JSONObject();
             data.put("answer", answer);
             data.put("related", new ArrayList<>());
@@ -78,7 +68,7 @@ public class ChatController {
         }
     }
 
-    private String callDeepSeek(String question) throws Exception {
+    private String callDeepSeek(String question, String kbContext) throws Exception {
         URL url = new URL(DEEPSEEK_API_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -96,7 +86,30 @@ public class ChatController {
 
         JSONObject systemMsg = new JSONObject();
         systemMsg.put("role", "system");
-        systemMsg.put("content", "你是一个OA办公系统的AI客服助手，你的名字叫「小星」。请用中文简洁回答OA系统使用相关问题，包括签到打卡、请假、个人信息修改等。如果问题与OA系统无关，礼貌地引导回OA话题。回答控制在200字以内。");
+
+        // 构建系统提示词：角色定位 + 知识库参考 + 格式约束
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("你是「小星」，星辰科技OA办公系统的AI智能客服助手。请以热情、专业的口吻回答用户的问题。\n\n");
+
+        prompt.append("## 角色定位\n");
+        prompt.append("- 你的名字叫「小星」，是星辰科技OA系统的AI助手\n");
+        prompt.append("- 回答要热情友好，像个真实的客服人员在跟你聊天\n");
+        prompt.append("- 控制在150字以内，简洁明了\n\n");
+
+        prompt.append("## 知识库参考（优先参考以下内容回答）\n");
+        if (kbContext != null && !kbContext.isEmpty()) {
+            prompt.append(kbContext);
+        } else {
+            prompt.append("（暂无知识库内容）\n");
+        }
+        prompt.append("\n## 回答要求\n");
+        prompt.append("1. 优先参考知识库内容回答问题\n");
+        prompt.append("2. 如果知识库没有相关信息，根据你的知识正常回答\n");
+        prompt.append("3. 回答控制在150字以内\n");
+        prompt.append("4. 使用热情友好的语气\n");
+        prompt.append("5. 直接回答问题，不要问「还有什么可以帮助您的吗」之类的客套话\n");
+
+        systemMsg.put("content", prompt.toString());
         messages.add(systemMsg);
 
         JSONObject userMsg = new JSONObject();

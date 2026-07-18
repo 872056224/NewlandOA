@@ -161,7 +161,7 @@ const statusText = computed(() => {
   if (aiOnline.value) {
     return `大模型在线（${'Agent'}）${ragReady.value ? ' · RAG 知识检索' : ' · 无知识库'}`
   }
-  return 'FAQ 离线模式 · 大模型未就绪'
+  return 'AI 在线 · 知识库问答'
 })
 
 const scrollToBottom = async () => {
