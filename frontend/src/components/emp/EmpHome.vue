@@ -1,71 +1,93 @@
 <template>
   <div class="emp-home">
-    <el-container>
-      <!-- 头部 -->
-      <el-header>
-        <div class="header-content">
-          <h2>员工办公系统</h2>
-          <div class="user-info">
-            <span>欢迎，{{ userInfo.name || '员工' }}</span>
-            <el-button @click="logout" type="primary" plain size="small">退出登录</el-button>
+    <div class="apple-page">
+      <!-- Greeting + Time -->
+      <div class="greeting-section">
+        <h1 class="apple-title">{{ greeting }}, {{ userInfo.name || '员工' }}</h1>
+        <p class="apple-subtitle">{{ currentTime }}</p>
+      </div>
+
+      <!-- Function Cards: 2x2 Grid -->
+      <div class="card-grid">
+        <div class="apple-card function-card" @click="goTo('/emp-home/sign-in')">
+          <div class="card-icon clock-icon">
+            <el-icon :size="28"><Clock /></el-icon>
           </div>
+          <h3 class="card-name">员工签到</h3>
+          <p class="card-desc">每日签到打卡</p>
         </div>
-      </el-header>
-      
-      <el-container>
-        <!-- 侧边栏 -->
-        <el-aside width="200px">
-          <el-menu
-            :default-active="$route.path"
-            router
-            background-color="#304156"
-            text-color="#bfcbd9"
-            active-text-color="#409EFF"
-          >
-            <el-menu-item index="/emp-home/info">
-              <el-icon><User /></el-icon>
-              <span>个人信息</span>
-            </el-menu-item>
-            <el-menu-item index="/emp-home/sign-in">
-              <el-icon><Clock /></el-icon>
-              <span>员工签到</span>
-            </el-menu-item>
-            <el-menu-item index="/emp-home/sign-message">
-              <el-icon><Document /></el-icon>
-              <span>签到记录</span>
-            </el-menu-item>
-            <el-menu-item index="/emp-home/update-pwd">
-              <el-icon><Lock /></el-icon>
-              <span>修改密码</span>
-            </el-menu-item>
-            <el-menu-item index="/emp-home/ai-chat">
-              <el-icon><Service /></el-icon>
-              <span>AI 客服</span>
-            </el-menu-item>
-          </el-menu>
-        </el-aside>
-        
-        <!-- 主内容区 -->
-        <el-main>
-          <router-view />
-        </el-main>
-      </el-container>
-    </el-container>
+        <div class="apple-card function-card" @click="goTo('/emp-home/info')">
+          <div class="card-icon user-icon">
+            <el-icon :size="28"><User /></el-icon>
+          </div>
+          <h3 class="card-name">个人信息</h3>
+          <p class="card-desc">查看和编辑资料</p>
+        </div>
+        <div class="apple-card function-card" @click="goTo('/emp-home/sign-message')">
+          <div class="card-icon doc-icon">
+            <el-icon :size="28"><Document /></el-icon>
+          </div>
+          <h3 class="card-name">签到记录</h3>
+          <p class="card-desc">查看签到历史</p>
+        </div>
+        <div class="apple-card function-card" @click="goTo('/emp-home/ai-chat')">
+          <div class="card-icon service-icon">
+            <el-icon :size="28"><Service /></el-icon>
+          </div>
+          <h3 class="card-name">AI 客服</h3>
+          <p class="card-desc">智能在线客服</p>
+        </div>
+      </div>
+
+      <!-- Child Routes -->
+      <router-view />
+    </div>
+
+    <!-- Logout -->
+    <div class="logout-area">
+      <el-button @click="logout" class="apple-btn" size="small">退出登录</el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Clock, Document, Lock, Service } from '@element-plus/icons-vue'
+import { User, Clock, Document, Service } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const router = useRouter()
 const userInfo = ref<any>({})
 const empName = ref<string>('')
+const currentTime = ref('')
+let timer: NodeJS.Timeout
+
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return '上午好'
+  if (hour < 18) return '下午好'
+  return '晚上好'
+})
+
+const updateTime = () => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  const h = String(now.getHours()).padStart(2, '0')
+  const mi = String(now.getMinutes()).padStart(2, '0')
+  const s = String(now.getSeconds()).padStart(2, '0')
+  currentTime.value = `${y}年${m}月${d}日 ${h}:${mi}:${s}`
+}
+
+const goTo = (path: string) => {
+  router.push(path)
+}
 
 onMounted(async () => {
+  updateTime()
+  timer = setInterval(updateTime, 1000)
   try {
     const response = await axios.get('/api/v1/employee/profile')
     if (response.data && response.data.data) {
@@ -74,6 +96,10 @@ onMounted(async () => {
   } catch (error) {
     console.error('获取员工信息失败:', error)
   }
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
 })
 
 const logout = async () => {
@@ -87,8 +113,7 @@ const logout = async () => {
         type: 'warning',
       }
     )
-    
-    // 用户确认后执行logout
+
     try {
       const response = await axios.post('/api/v1/employee/logout')
       ElMessage.success('退出登录成功')
@@ -96,12 +121,10 @@ const logout = async () => {
       console.error('退出登录失败:', error)
       ElMessage.warning('退出登录失败，但将跳转到登录页')
     } finally {
-      // 无论API调用是否成功，都清除本地状态并跳转
       userInfo.value = {}
       router.push('/emp-login')
     }
   } catch {
-    // 用户取消了退出操作
     ElMessage.info('已取消退出')
   }
 }
@@ -120,65 +143,69 @@ const getEmpName = async () => {
 
 <style scoped>
 .emp-home {
-  height: 100vh;
-  background-color: #1f1f20;
-  overflow: hidden;
+  min-height: 100vh;
+  background: var(--apple-bg);
+  position: relative;
 }
 
-.emp-home .el-container {
-  height: 100vh;
+.greeting-section {
+  margin-bottom: 32px;
 }
 
-.emp-home .el-container:nth-child(2) {
-  height: calc(100vh - 60px);
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 480px;
+  margin-bottom: 40px;
 }
 
-.el-header {
-  background-color: #033363;
-  color: white;
-  line-height: 60px;
-  height: 60px !important;
-}
-
-.header-content {
+.function-card {
+  width: 100%;
+  height: 140px;
+  padding: 24px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
 }
 
-.user-info {
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 15px;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: #fff;
 }
 
-.user-info .el-button {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  color: white;
+.clock-icon { background: var(--apple-blue); }
+.user-icon { background: var(--apple-green); }
+.doc-icon { background: var(--apple-orange); }
+.service-icon { background: #5E5CE6; }
+
+.card-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--apple-text);
+  margin: 0 0 4px;
 }
 
-.user-info .el-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: white;
-  color: white;
+.card-desc {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  margin: 0;
 }
 
-.el-aside {
-  background-color: #052042;
-  width: 200px !important;
-  height: 100%;
+.logout-area {
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  z-index: 10;
 }
-
-.el-menu {
-  border-right: none;
-  height: 100%;
-}
-
-.el-main {
-  background-color: #f5f5f5;
-  padding: 20px;
-  height: 100%;
-  overflow-y: auto;
-}
-</style> 
+</style>

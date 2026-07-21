@@ -1,124 +1,69 @@
 <template>
-  <div class="dashboard">
-    <div class="dashboard-header">
-      <div class="header-left">
-        <!-- <el-image class="header-img" src="/src/assets/emphand.jpg"/> -->
-        <span class="header-text">后台管理</span>
+  <div class="dashboard apple-page">
+    <!-- Stats Cards -->
+    <div class="stats-row">
+      <div class="apple-card stat-card" v-loading="loading">
+        <div class="stat-value">{{ stats.employeeCount }}</div>
+        <div class="stat-label">员工总数</div>
+      </div>
+      <div class="apple-card stat-card" v-loading="loading">
+        <div class="stat-value">{{ stats.departmentCount }}</div>
+        <div class="stat-label">部门数量</div>
+      </div>
+      <div class="apple-card stat-card" v-loading="loading">
+        <div class="stat-value">{{ stats.dutyCount }}</div>
+        <div class="stat-label">职务数量</div>
+      </div>
+      <div class="apple-card stat-card" v-loading="loading">
+        <div class="stat-value">{{ stats.todayAttendance }}</div>
+        <div class="stat-label">今日签到</div>
       </div>
     </div>
-    
-    <div class="dashboard-content">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-card class="stat-card" v-loading="loading">
-            <div class="stat-item">
-              <div class="stat-icon employee">
-                <el-icon><User /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-number">{{ stats.employeeCount }}</div>
-                <div class="stat-label">员工总数</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card class="stat-card" v-loading="loading">
-            <div class="stat-item">
-              <div class="stat-icon department">
-                <el-icon><OfficeBuilding /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-number">{{ stats.departmentCount }}</div>
-                <div class="stat-label">部门数量</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card class="stat-card" v-loading="loading">
-            <div class="stat-item">
-              <div class="stat-icon attendance">
-                <el-icon><Clock /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-number">{{ stats.todayAttendance }}</div>
-                <div class="stat-label">今日签到</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card class="stat-card" v-loading="loading">
-            <div class="stat-item">
-              <div class="stat-icon duty">
-                <el-icon><Briefcase /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-number">{{ stats.dutyCount }}</div>
-                <div class="stat-label">职务数量</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      
-      <el-row :gutter="20" style="margin-top: 20px;">
-        <el-col :span="12">
-          <el-card>
-            <template #header>
-              <span>快速导航</span>
-            </template>
-            <div class="quick-nav">
-              <el-button 
-                type="primary" 
-                @click="$router.push('/admin-home/emp-list')"
-                :icon="User"
-              >
-                员工管理
-              </el-button>
-              <el-button 
-                type="success" 
-                @click="$router.push('/admin-home/dept-manage')"
-                :icon="OfficeBuilding"
-              >
-                部门管理
-              </el-button>
-              <el-button 
-                type="warning" 
-                @click="$router.push('/admin-home/duty-manage')"
-                :icon="Briefcase"
-              >
-                职务管理
-              </el-button>
-              <el-button 
-                type="info" 
-                @click="$router.push('/admin-home/sign-list')"
-                :icon="Clock"
-              >
-                考勤管理
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="12">
-          <el-card>
-            <template #header>
-              <span>系统信息</span>
-            </template>
-            <div class="system-info">
-              <p><strong>系统版本：</strong>OA办公系统 v2.0</p>
-              <p><strong>当前时间：</strong>{{ currentTime }}</p>
-              <p><strong>在线用户：</strong>{{ stats.onlineUsers }} 人</p>
-              <p><strong>系统状态：</strong><el-tag type="success">运行正常</el-tag></p>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+
+    <!-- Quick Navigation -->
+    <div class="apple-card section-card">
+      <h3 class="section-title">快速导航</h3>
+      <div class="quick-nav">
+        <button class="nav-btn" @click="$router.push('/admin-home/emp-list')">
+          <el-icon :size="18"><User /></el-icon>
+          <span>员工管理</span>
+        </button>
+        <button class="nav-btn" @click="$router.push('/admin-home/dept-manage')">
+          <el-icon :size="18"><OfficeBuilding /></el-icon>
+          <span>部门管理</span>
+        </button>
+        <button class="nav-btn" @click="$router.push('/admin-home/duty-manage')">
+          <el-icon :size="18"><Briefcase /></el-icon>
+          <span>职务管理</span>
+        </button>
+        <button class="nav-btn" @click="$router.push('/admin-home/sign-list')">
+          <el-icon :size="18"><Clock /></el-icon>
+          <span>考勤管理</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="apple-card section-card">
+      <h3 class="section-title">系统信息</h3>
+      <div class="system-info">
+        <div class="info-row">
+          <span class="info-label">系统版本</span>
+          <span class="info-value">OA办公系统 v2.0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">当前时间</span>
+          <span class="info-value">{{ currentTime }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">在线用户</span>
+          <span class="info-value">{{ stats.onlineUsers }} 人</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">系统状态</span>
+          <span class="info-value"><el-tag type="success" size="small">运行正常</el-tag></span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -150,7 +95,6 @@ const updateTime = () => {
 const loadStats = async () => {
   loading.value = true
   try {
-    // 并行获取各种统计数据
     const [employeesRes, departmentsRes, dutiesRes, todaySignedRes] = await Promise.all([
       axios.get('/api/v1/admin/employees', { params: { currentPage: 1, pageSize: 1 } }),
       axios.get('/api/v1/admin/departments'),
@@ -158,22 +102,15 @@ const loadStats = async () => {
       axios.get('/api/v1/admin/attendance/today/signed', { params: { currentPage: 1, pageSize: 1 } })
     ])
 
-    // 员工总数
     if (employeesRes.data && employeesRes.data.total !== undefined) {
       stats.employeeCount = employeesRes.data.total
     }
-
-    // 部门数量
     if (departmentsRes.data && departmentsRes.data.data) {
       stats.departmentCount = departmentsRes.data.data.length
     }
-
-    // 职务数量
     if (dutiesRes.data && dutiesRes.data.data) {
       stats.dutyCount = dutiesRes.data.data.length
     }
-
-    // 今日签到人数
     if (todaySignedRes.data && todaySignedRes.data.total !== undefined) {
       stats.todayAttendance = todaySignedRes.data.total
     }
@@ -181,7 +118,6 @@ const loadStats = async () => {
     console.log('统计数据加载完成:', stats)
   } catch (error) {
     console.error('加载统计数据失败:', error)
-    // 如果获取失败，设置默认值
     stats.employeeCount = 0
     stats.departmentCount = 0
     stats.todayAttendance = 0
@@ -206,103 +142,118 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard {
-  padding: 20px;
+  padding-top: 32px;
+  /* ECharts Apple palette (cascades to chart components) */
+  --apple-chart-blue: #0071E3;
+  --apple-chart-light-blue: #64B5F6;
+  --apple-chart-cyan: #00C7BE;
+  --apple-chart-green: #34C759;
+  --apple-chart-orange: #FF9500;
+  --apple-chart-red: #FF3B30;
+  --apple-chart-purple: #AF52DE;
+  --apple-chart-pink: #FF2D55;
+  --apple-chart-gray: #8E8E93;
+  --apple-chart-light-gray: #C7C7CC;
 }
 
-.dashboard-header {
-  margin-bottom: 20px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.header-img {
-  width: 107px;
-  height: 39px;
-  margin-right: 10px;
-}
-
-.header-text {
-  font-size: 25px;
-  font-weight: bold;
+/* Stats Cards */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
 .stat-card {
-  height: 120px;
-}
-
-.stat-item {
+  padding: 28px 24px;
+  text-align: center;
+  min-height: 120px;
   display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
-  font-size: 24px;
-  color: white;
 }
 
-.stat-icon.employee {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.department {
-  background: linear-gradient(135deg, #161a51 0%, #3d246c 100%);
-}
-
-.stat-icon.attendance {
-  background: linear-gradient(135deg, #363966 0%, #1a2b6a 100%);
-}
-
-.stat-icon.duty {
-  background: linear-gradient(135deg, #1e182e 0%, #160e3a 100%);
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 5px;
+.stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--apple-text);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--apple-text-secondary);
+  font-weight: 400;
 }
 
+/* Section Cards */
+.section-card {
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--apple-text);
+  margin: 0 0 20px;
+}
+
+/* Quick Navigation */
 .quick-nav {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 15px;
-  padding: 15px;
-  align-items: stretch;
-  justify-items: stretch;
-  box-sizing: border-box;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
-.quick-nav .el-button {
-  height: 40px;
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: var(--apple-radius);
+  border: 1px solid var(--apple-border);
+  background: var(--apple-white);
+  color: var(--apple-text);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
   width: 100%;
-  margin: 0;
-  box-sizing: border-box;
 }
 
-.system-info p {
-  margin: 10px 0;
-  color: #606266;
+.nav-btn:hover {
+  border-color: var(--apple-blue);
+  color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
 }
-</style> 
+
+/* System Info */
+.system-info {
+  display: grid;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.info-label {
+  font-size: 14px;
+  color: var(--apple-text-secondary);
+}
+
+.info-value {
+  font-size: 14px;
+  color: var(--apple-text);
+  font-weight: 500;
+}
+</style>
