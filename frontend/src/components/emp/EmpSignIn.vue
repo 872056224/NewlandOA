@@ -112,7 +112,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[8, 20, 50]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
@@ -237,7 +237,7 @@ const currentTime = ref('')
 const todaySignData = ref<any[]>([])
 const historyData = ref<any[]>([])
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(8)
 const total = ref(0)
 const isOnLeave = ref(false)  // 今天是否有已批准的请假
 

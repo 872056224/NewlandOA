@@ -139,7 +139,7 @@ onMounted(async () => {
   }
   // 启动通知轮询
   fetchNotifications()
-  notifTimer = setInterval(fetchNotifications, 30000)
+  notifTimer = setInterval(fetchNotifications, 10000)
 })
 
 onUnmounted(() => {

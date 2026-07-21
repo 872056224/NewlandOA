@@ -13,7 +13,7 @@ public interface SignDao {
     @Select("SELECT * FROM day.sign WHERE number = #{number} ORDER BY id DESC")
     List<Sign> selectByNumber(@Param("number") int number);
 
-    @Select("SELECT * FROM day.sign WHERE number = #{number} ORDER BY id DESC")
+    @Select("SELECT * FROM day.sign WHERE number = #{number} ORDER BY id DESC LIMIT #{offset}, #{limit}")
     List<Sign> selectByNumberPage(@Param("number") int number,
                                   @Param("offset") int offset,
                                   @Param("limit") int limit);
