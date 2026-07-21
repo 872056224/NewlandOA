@@ -25,10 +25,14 @@ import java.util.Map;
 @CrossOrigin
 public class ChatController {
 
-    private static final String DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
-    @Value("${deepseek.api-key:}")
+    @Value("${ai.llm.base-url:http://localhost:1234/v1}")
+    private String baseUrl;
+    @Value("${ai.llm.api-key:}")
     private String apiKey;
-    private static final String DEEPSEEK_MODEL = "deepseek-chat";
+    @Value("${ai.llm.model:qwen2.5-7b-instruct-q4_k_m}")
+    private String modelName;
+    @Value("${ai.provider:local}")
+    private String provider;
 
     @Autowired
     private KbDocDao kbDocDao;
@@ -99,17 +103,21 @@ public class ChatController {
     }
 
     private String callDeepSeek(String question, String kbContext) throws Exception {
-        URL url = new URL(DEEPSEEK_API_URL);
+        String apiUrl = baseUrl + "/chat/completions";
+        URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        // 本地 LM Studio 不需要鉴权头；DeepSeek API 需要
+        if (apiKey != null && !apiKey.isEmpty()) {
+            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        }
         conn.setDoOutput(true);
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(30000);
 
         JSONObject body = new JSONObject();
-        body.put("model", DEEPSEEK_MODEL);
+        body.put("model", modelName);
         body.put("stream", false);
 
         JSONArray messages = new JSONArray();

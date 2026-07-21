@@ -52,17 +52,17 @@ elasticsearch:
   port: 9200
 
 # AI 客服配置
-# vector-store: 自建向量库持久化路径
-# llm: 默认走本地自建向量库检索问答（零外部依赖）；
-#      如需大模型生成式回答(RAG)，将 enabled 改为 true 并填入 OpenAI 兼容接口的 api-key
+# provider: local 时走本地 LM Studio / Ollama（推荐）
+# provider: deepseek 时走 DeepSeek API
 ai:
+  provider: local
   vector-store:
     persist-path: ./data/vector-store.json
   llm:
-    enabled: false
-    base-url: https://api.deepseek.com/v1
+    enabled: true
+    base-url: http://localhost:1234/v1
     api-key: ""
-    model: deepseek-chat
+    model: qwen2.5-7b-instruct-q4_k_m
     timeout-ms: 30000
 
 # 日志配置
@@ -72,7 +72,7 @@ logging:
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
 
-# DeepSeek AI 配置（使用默认key，通过环境变量 DEEPSEEK_API_KEY 可覆盖）
+# DeepSeek API Key（保留备用，当 ai.provider=deepseek 时使用）
 deepseek:
   api-key: sk-6a795b8a2dc04730b8e42aee016295b7
 
