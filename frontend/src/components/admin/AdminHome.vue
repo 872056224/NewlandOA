@@ -1,26 +1,23 @@
 <template>
   <div class="admin-home">
     <el-container>
-      <!-- 头部 -->
+      <!-- Apple-style header: white, thin bottom border -->
       <el-header>
         <div class="header-content">
           <h2>管理员系统</h2>
           <div class="user-info">
             <span>欢迎，{{ userInfo.name || '管理员' }}</span>
-            <el-button @click="logout" type="primary" plain size="small">退出登录</el-button>
+            <el-button @click="logout" text size="small">退出登录</el-button>
           </div>
         </div>
       </el-header>
-      
+
       <el-container>
-        <!-- 侧边栏 -->
+        <!-- Sidebar: gray text, blue active text, no background blocks -->
         <el-aside width="200px">
           <el-menu
             :default-active="$route.path"
             router
-            background-color="#304156"
-            text-color="#bfcbd9"
-            active-text-color="#409EFF"
           >
             <el-menu-item index="/admin-home/dashboard">
               <el-icon><Odometer /></el-icon>
@@ -46,13 +43,17 @@
               <el-icon><PieChart /></el-icon>
               <span>考勤统计</span>
             </el-menu-item>
+            <el-menu-item index="/admin-home/leave-approval">
+              <el-icon><Edit /></el-icon>
+              <span>请假审批</span>
+            </el-menu-item>
             <el-menu-item index="/admin-home/kb-manage">
               <el-icon><ChatDotRound /></el-icon>
               <span>知识库管理</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
-        
+
         <!-- 主内容区 -->
         <el-main>
           <router-view />
@@ -66,14 +67,15 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Odometer, 
-  User, 
-  OfficeBuilding, 
-  Briefcase, 
-  Clock, 
+import {
+  Odometer,
+  User,
+  OfficeBuilding,
+  Briefcase,
+  Clock,
   PieChart,
-  ChatDotRound
+  ChatDotRound,
+  Edit
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
@@ -107,8 +109,7 @@ const logout = async () => {
         type: 'warning',
       }
     )
-    
-    // 用户确认后执行logout
+
     try {
       const response = await axios.post('/api/v1/admin/auth/logout')
       ElMessage.success('退出登录成功')
@@ -116,12 +117,10 @@ const logout = async () => {
       console.error('退出登录失败:', error)
       ElMessage.warning('退出登录失败，但将跳转到登录页')
     } finally {
-      // 无论API调用是否成功，都清除本地状态并跳转
       userInfo.value = {}
       router.push('/admin-login')
     }
   } catch {
-    // 用户取消了退出操作
     ElMessage.info('已取消退出')
   }
 }
@@ -130,7 +129,7 @@ const logout = async () => {
 <style scoped>
 .admin-home {
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f5f5f7;
   overflow: hidden;
 }
 
@@ -139,14 +138,16 @@ const logout = async () => {
 }
 
 .admin-home .el-container:nth-child(2) {
-  height: calc(100vh - 60px);
+  height: calc(100vh - 56px);
 }
 
+/* ── Apple-style header ── */
 .el-header {
-  background-color: #022141;
-  color: white;
-  line-height: 60px;
-  height: 60px !important;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e7;
+  line-height: 56px;
+  height: 56px !important;
+  padding: 0 24px;
 }
 
 .header-content {
@@ -155,39 +156,79 @@ const logout = async () => {
   align-items: center;
 }
 
+.header-content h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
+  font-size: 13px;
+  color: #86868b;
 }
 
 .user-info .el-button {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  color: white;
+  color: #86868b;
 }
 
 .user-info .el-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: white;
-  color: white;
+  color: #1d1d1f;
 }
 
+/* ── Sidebar ── */
 .el-aside {
-  background-color: #304156;
+  background: #fff;
   width: 200px !important;
   height: 100%;
+  border-right: 1px solid #e5e5e7;
 }
 
 .el-menu {
   border-right: none;
   height: 100%;
+  background: transparent;
 }
 
+/* Sidebar menu items: gray text, blue when active, no background blocks */
+.el-menu-item {
+  color: #86868b !important;
+  background: transparent !important;
+  font-size: 14px;
+  height: 44px;
+  line-height: 44px;
+  margin: 2px 8px;
+  border-radius: 8px;
+}
+
+.el-menu-item:hover {
+  color: #1d1d1f !important;
+  background: #f5f5f7 !important;
+}
+
+.el-menu-item.is-active {
+  color: #0071e3 !important;
+  background: transparent !important;
+}
+
+.el-menu-item.is-active:hover {
+  background: #f5f5f7 !important;
+}
+
+/* Icon spacing inside menu items */
+.el-menu-item .el-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* ── Main content ── */
 .el-main {
-  background-color: #f5f5f5;
-  padding: 20px;
+  background-color: #f5f5f7;
+  padding: 24px;
   height: 100%;
   overflow-y: auto;
 }
-</style> 
+</style>

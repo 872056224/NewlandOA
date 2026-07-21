@@ -41,6 +41,16 @@ const router = createRouter({
           path: 'ai-chat',
           name: 'EmpAiChat',
           component: () => import('../components/emp/EmpAiChat.vue')
+        },
+        {
+          path: 'leave-apply',
+          name: 'EmpLeaveApply',
+          component: () => import('../components/emp/EmpLeaveApply.vue')
+        },
+        {
+          path: 'leave-list',
+          name: 'EmpLeaveList',
+          component: () => import('../components/emp/EmpLeaveList.vue')
         }
       ]
     },
@@ -98,6 +108,11 @@ const router = createRouter({
           path: 'unsigned-list',
           name: 'UnsignedList',
           component: () => import('../components/admin/UnsignedList.vue')
+        },
+        {
+          path: 'leave-approval',
+          name: 'LeaveApproval',
+          component: () => import('../components/admin/LeaveApproval.vue')
         }
       ]
     }

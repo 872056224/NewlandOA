@@ -36,6 +36,13 @@
           <h3 class="card-name">签到记录</h3>
           <p class="card-desc">查看签到历史</p>
         </div>
+        <div class="apple-card function-card" @click="goTo('/emp-home/leave-apply')">
+          <div class="card-icon">
+            <el-icon :size="24"><Edit /></el-icon>
+          </div>
+          <h3 class="card-name">请假申请</h3>
+          <p class="card-desc">提交请假申请</p>
+        </div>
         <div class="apple-card function-card" @click="goTo('/emp-home/ai-chat')">
           <div class="card-icon">
             <el-icon :size="24"><Service /></el-icon>
@@ -55,7 +62,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Clock, Document, Service } from '@element-plus/icons-vue'
+import { User, Clock, Document, Service, Edit } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const router = useRouter()
