@@ -17,17 +17,17 @@
       header-cell-class-name="apple-table-header"
       class="el-table--borderless"
     >
-      <el-table-column align="center" label="申请人" prop="name" min-width="120" />
-      <el-table-column align="center" label="部门" prop="dept_name" min-width="140" />
-      <el-table-column align="center" label="类型" min-width="120">
+      <el-table-column align="center" label="申请人" prop="name" width="80" />
+      <el-table-column align="center" label="部门" prop="dept_name" width="110" />
+      <el-table-column align="center" label="类型" width="70">
         <template #default="{ row }">
           <span class="type-tag">{{ row.type || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="开始时间" prop="start_date" min-width="170" />
-      <el-table-column align="center" label="结束时间" prop="end_date" min-width="170" />
-      <el-table-column align="center" label="事由" prop="reason" min-width="200" show-overflow-tooltip />
-      <el-table-column align="center" label="状态" min-width="120">
+      <el-table-column align="center" label="开始时间" prop="start_date" width="155" />
+      <el-table-column align="center" label="结束时间" prop="end_date" width="155" />
+      <el-table-column align="left" label="事由" prop="reason" min-width="120" show-overflow-tooltip />
+      <el-table-column align="center" label="状态" width="75">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" effect="plain" class="status-tag">
             {{ row.status }}
@@ -36,7 +36,7 @@
       </el-table-column>
 
       <!-- 操作列：仅待审批页签显示 -->
-      <el-table-column align="center" label="操作" min-width="200" v-if="activeTab === 'pending'">
+      <el-table-column align="center" label="操作" width="150" v-if="activeTab === 'pending'">
         <template #default="{ row }">
           <el-button
             class="apple-btn apple-btn-primary"
