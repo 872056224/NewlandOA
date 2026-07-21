@@ -47,6 +47,10 @@
               <el-icon><Edit /></el-icon>
               <span>请假审批</span>
             </el-menu-item>
+            <el-menu-item index="/admin-home/retroactive-approval">
+              <el-icon><Clock /></el-icon>
+              <span>补签审批</span>
+            </el-menu-item>
             <el-menu-item index="/admin-home/kb-manage">
               <el-icon><ChatDotRound /></el-icon>
               <span>知识库管理</span>

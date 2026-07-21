@@ -121,6 +121,33 @@
       </div>
     </div>
 
+    <!-- 补签申请按钮 -->
+    <div class="retroactive-section">
+      <el-button type="warning" @click="showRetroactiveDialog = true" :disabled="isOnLeave" size="large">
+        申请补签
+      </el-button>
+      <span class="retroactive-hint">漏签了？可申请补签当天的签到记录</span>
+    </div>
+
+    <!-- 补签申请对话框 -->
+    <el-dialog v-model="showRetroactiveDialog" title="申请补签" width="420px" center>
+      <el-form :model="retroactiveForm" label-width="80px">
+        <el-form-item label="补签类型">
+          <el-select v-model="retroactiveForm.type" style="width: 100%">
+            <el-option label="上班签到 (上午)" value="a" />
+            <el-option label="下班签退 (下午)" value="p" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="补签原因">
+          <el-input v-model="retroactiveForm.reason" type="textarea" :rows="3" maxlength="200" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRetroactiveDialog = false">取消</el-button>
+        <el-button type="warning" @click="submitRetroactive" :loading="retroactiveSubmitting">提交申请</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 签到确认对话框 -->
     <el-dialog
       v-model="showSignDialog"
@@ -203,6 +230,14 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const isOnLeave = ref(false)  // 今天是否有已批准的请假
+
+// 补签相关
+const showRetroactiveDialog = ref(false)
+const retroactiveSubmitting = ref(false)
+const retroactiveForm = reactive({
+  type: 'a',
+  reason: ''
+})
 
 // 定时器
 let timeInterval: any = null
@@ -561,6 +596,39 @@ const getLeaveStatus = async () => {
   }
 }
 
+// 提交补签申请
+const submitRetroactive = async () => {
+  if (!retroactiveForm.reason.trim()) {
+    ElMessage.warning('请填写补签原因')
+    return
+  }
+  retroactiveSubmitting.value = true
+  try {
+    const today = new Date()
+    const dateStr = today.getFullYear() + '-' +
+      String(today.getMonth() + 1).padStart(2, '0') + '-' +
+      String(today.getDate()).padStart(2, '0')
+
+    const response = await axios.post('/api/v1/employee/attendance/retroactive/apply', {
+      signDate: dateStr,
+      type: retroactiveForm.type,
+      reason: retroactiveForm.reason
+    })
+    if (response.data && response.data.code === 200) {
+      ElMessage.success('补签申请已提交，等待管理员审批')
+      showRetroactiveDialog.value = false
+      retroactiveForm.reason = ''
+    } else {
+      ElMessage.error(response.data?.message || '提交失败')
+    }
+  } catch (error) {
+    console.error('提交补签失败:', error)
+    ElMessage.error('网络错误')
+  } finally {
+    retroactiveSubmitting.value = false
+  }
+}
+
 // 刷新数据
 const refreshData = async () => {
   await Promise.all([
@@ -879,6 +947,22 @@ onUnmounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* ============ 补签申请 ============ */
+.retroactive-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: #fff8e1;
+  border-radius: var(--apple-radius, 12px);
+}
+
+.retroactive-hint {
+  font-size: 13px;
+  color: var(--apple-text-secondary, #86868b);
 }
 
 /* ============ 对话框 ============ */

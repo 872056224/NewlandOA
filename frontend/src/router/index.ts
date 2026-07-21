@@ -110,6 +110,11 @@ const router = createRouter({
           component: () => import('../components/admin/UnsignedList.vue')
         },
         {
+          path: 'retroactive-approval',
+          name: 'RetroactiveApproval',
+          component: () => import('../components/admin/RetroactiveApproval.vue')
+        },
+        {
           path: 'leave-approval',
           name: 'LeaveApproval',
           component: () => import('../components/admin/LeaveApproval.vue')

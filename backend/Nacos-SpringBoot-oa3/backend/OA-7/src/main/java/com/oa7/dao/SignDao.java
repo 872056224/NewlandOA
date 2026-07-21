@@ -134,6 +134,9 @@ public interface SignDao {
     @Update("update day.sign set state=#{sign.state}  ,signDate=#{date}  where number=#{sign.number}  and signDate=#{sign.signDate}   ")
     int updateState(@Param("sign") Sign sign , @Param("date") String date);
 
+    // 补签专用：按员工编号+日期+类型更新签到状态
+    @Update("UPDATE day.sign SET state='已签到' WHERE number=#{number} AND signDate LIKE CONCAT(#{date}, '%') AND type=#{type}")
+    int updateStateByDateAndType(@Param("number") int number, @Param("date") String date, @Param("type") String type);
 
     @Delete("DELETE  from day.sign  WHERE signDate  BETWEEN  signDate=#{beganDate} and signDate=#{endDate}")
     void deleteSign(String beganDate,String endDate);

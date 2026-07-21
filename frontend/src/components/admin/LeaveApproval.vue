@@ -17,17 +17,17 @@
       header-cell-class-name="apple-table-header"
       class="el-table--borderless"
     >
-      <el-table-column align="center" label="申请人" prop="name" width="80" />
-      <el-table-column align="center" label="部门" prop="dept_name" width="110" />
-      <el-table-column align="center" label="类型" width="70">
+      <el-table-column align="center" label="申请人" prop="name" width="100" />
+      <el-table-column align="center" label="部门" prop="dept_name" width="130" />
+      <el-table-column align="center" label="类型" width="100">
         <template #default="{ row }">
           <span class="type-tag">{{ row.type || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="开始时间" prop="start_date" width="155" />
-      <el-table-column align="center" label="结束时间" prop="end_date" width="155" />
-      <el-table-column align="left" label="事由" prop="reason" min-width="120" show-overflow-tooltip />
-      <el-table-column align="center" label="状态" width="75">
+      <el-table-column align="center" label="开始时间" prop="start_date" width="170" />
+      <el-table-column align="center" label="结束时间" prop="end_date" width="170" />
+      <el-table-column align="left" label="事由" prop="reason" min-width="150" show-overflow-tooltip />
+      <el-table-column align="center" label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" effect="plain" class="status-tag">
             {{ row.status }}
@@ -36,7 +36,7 @@
       </el-table-column>
 
       <!-- 操作列：仅待审批页签显示 -->
-      <el-table-column align="center" label="操作" width="150" v-if="activeTab === 'pending'">
+      <el-table-column align="center" label="操作" width="200" v-if="activeTab === 'pending'">
         <template #default="{ row }">
           <el-button
             class="apple-btn apple-btn-primary"
@@ -321,5 +321,11 @@ onMounted(() => {
 
 .apple-btn-danger:hover {
   background-color: #ff453a;
+}
+
+/* ── Override: 拉宽页面容器，避免操作列滚动 ── */
+.apple-page {
+  max-width: 100% !important;
+  padding: 40px 32px;
 }
 </style>
