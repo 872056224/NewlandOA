@@ -1,49 +1,51 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h3 class="login-title">管理员登录</h3>
+  <div class="apple-login-page">
+    <div class="apple-card login-card">
+      <div class="login-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </div>
+      <h1 class="apple-title">管理员登录</h1>
+      <p class="apple-subtitle">登录管理系统</p>
       <el-form
         ref="loginFormRef"
         :model="loginForm"
         :rules="rules"
-        label-width="80px"
       >
-        <el-form-item label="账号" prop="username">
+        <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
             type="text"
             placeholder="请输入管理员账号"
+            class="apple-input"
           />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
             placeholder="请输入密码"
+            class="apple-input"
           />
         </el-form-item>
         <el-form-item>
-          <div class="button-group">
-            <el-button
-              type="primary"
-              @click="handleLogin"
-              :loading="loading"
-              class="login-btn"
-            >
-              登录
-            </el-button>
-            <el-button
-              type="primary"
-              @click="showRegisterDialog"
-              class="register-btn"
-            >
-              注册
-            </el-button>
-          </div>
+          <el-button
+            type="primary"
+            @click="handleLogin"
+            :loading="loading"
+            class="apple-btn apple-btn-primary"
+            style="width: 100%"
+          >
+            登录
+          </el-button>
         </el-form-item>
       </el-form>
       <div class="login-links">
-        <el-link @click="goToEmpLogin" type="primary">员工登录</el-link>
+        <span class="link-text" @click="showRegisterDialog">注册账号</span>
+        <span class="link-separator">|</span>
+        <span class="link-text" @click="goToEmpLogin">切换至员工登录</span>
       </div>
     </div>
 
@@ -202,43 +204,52 @@ const goToEmpLogin = () => {
 </script>
 
 <style scoped>
-.login-container {
+.apple-login-page {
   height: 100vh;
-  background: url('/src/assets/background.jpg') no-repeat center center;
-  background-size: cover;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--apple-bg);
 }
 
-.login-box {
-  border: 1px solid #DCDFE6;
-  background: rgb(222, 227, 227);
-  width: 650px;
-  height: 360px;
-  padding: 35px 35px 15px 35px;
-  border-radius: 5px;
-  box-shadow: 0 0 25px #909399;
-}
-
-.login-title {
+.login-card {
+  width: 400px;
+  padding: 40px;
   text-align: center;
-  margin: 0 auto 40px auto;
-  color: #303133;
+}
+
+.login-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  background: var(--apple-bg-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--apple-text-secondary);
 }
 
 .login-links {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.button-group {
+  margin-top: 24px;
   display: flex;
-  gap: 12px;
-  width: 100%;
+  justify-content: center;
+  gap: 8px;
 }
 
-.login-btn, .register-btn {
-  flex: 1;
+.link-text {
+  color: var(--apple-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.link-text:hover {
+  color: var(--apple-blue);
+}
+
+.link-separator {
+  color: var(--apple-text-tertiary);
+  font-size: 14px;
 }
 </style> 

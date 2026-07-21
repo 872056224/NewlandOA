@@ -1,25 +1,33 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h3 class="login-title">员工登录</h3>
+  <div class="apple-login-page">
+    <div class="apple-card login-card">
+      <div class="login-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+      <h1 class="apple-title">欢迎回来</h1>
+      <p class="apple-subtitle">登录你的账号</p>
       <el-form
         ref="loginFormRef"
         :model="loginForm"
         :rules="rules"
-        label-width="80px"
       >
-        <el-form-item label="账号" prop="number">
+        <el-form-item prop="number">
           <el-input
             v-model="loginForm.number"
             type="text"
             placeholder="请输入员工账号"
+            class="apple-input"
           />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
             placeholder="请输入密码（初始密码为：123）"
+            class="apple-input"
           />
         </el-form-item>
         <el-form-item>
@@ -27,6 +35,7 @@
             type="primary"
             @click="handleLogin"
             :loading="loading"
+            class="apple-btn apple-btn-primary"
             style="width: 100%"
           >
             登录
@@ -34,7 +43,7 @@
         </el-form-item>
       </el-form>
       <div class="login-links">
-        <el-link @click="goToAdminLogin" type="primary">管理员登录</el-link>
+        <span class="link-text" @click="goToAdminLogin">切换至管理员登录</span>
       </div>
     </div>
   </div>
@@ -102,33 +111,44 @@ const goToAdminLogin = () => {
 </script>
 
 <style scoped>
-.login-container {
+.apple-login-page {
   height: 100vh;
-  background: url('/src/assets/empLogin.jpg') no-repeat center center;
-  background-size: cover;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--apple-bg);
 }
 
-.login-box {
-  border: 1px solid #7a7b7e;
-  background: rgb(195, 204, 215);
-  width: 600px;
-  height: 310px;
-  padding: 35px 35px 15px 35px;
-  border-radius: 5px;
-  box-shadow: 0 0 25px #909399;
-}
-
-.login-title {
+.login-card {
+  width: 400px;
+  padding: 40px;
   text-align: center;
-  margin: 0 auto 40px auto;
-  color: #303133;
+}
+
+.login-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  background: var(--apple-bg-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--apple-text-secondary);
 }
 
 .login-links {
-  text-align: center;
-  margin-top: 20px;
+  margin-top: 24px;
+}
+
+.link-text {
+  color: var(--apple-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.link-text:hover {
+  color: var(--apple-blue);
 }
 </style> 
