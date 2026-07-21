@@ -17,15 +17,15 @@
       header-cell-class-name="apple-table-header"
       class="el-table--borderless"
     >
-      <el-table-column align="center" label="申请人" prop="applicantName" min-width="120" />
-      <el-table-column align="center" label="部门" prop="deptName" min-width="140" />
+      <el-table-column align="center" label="申请人" prop="name" min-width="120" />
+      <el-table-column align="center" label="部门" prop="dept_name" min-width="140" />
       <el-table-column align="center" label="类型" min-width="120">
         <template #default="{ row }">
-          <span class="type-tag">{{ row.leaveType || row.type || '-' }}</span>
+          <span class="type-tag">{{ row.type || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="开始时间" prop="startTime" min-width="170" />
-      <el-table-column align="center" label="结束时间" prop="endTime" min-width="170" />
+      <el-table-column align="center" label="开始时间" prop="start_date" min-width="170" />
+      <el-table-column align="center" label="结束时间" prop="end_date" min-width="170" />
       <el-table-column align="center" label="事由" prop="reason" min-width="200" show-overflow-tooltip />
       <el-table-column align="center" label="状态" min-width="120">
         <template #default="{ row }">
@@ -147,7 +147,7 @@ const handleCurrentChange = (pageNum: number) => {
 const handleApprove = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确定要批准【${row.applicantName}】的请假申请吗？`,
+      `确定要批准【${row.name}】的请假申请吗？`,
       '批准确认',
       {
         confirmButtonText: '确定',
@@ -179,7 +179,7 @@ const handleApprove = async (row: any) => {
 const handleReject = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确定要拒绝【${row.applicantName}】的请假申请吗？`,
+      `确定要拒绝【${row.name}】的请假申请吗？`,
       '拒绝确认',
       {
         confirmButtonText: '确定',
