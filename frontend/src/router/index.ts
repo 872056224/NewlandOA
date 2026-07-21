@@ -38,6 +38,11 @@ const router = createRouter({
           component: () => import('../components/emp/EmpUpdatePwd.vue')
         },
         {
+          path: 'notifications',
+          name: 'EmpNotifications',
+          component: () => import('../components/emp/EmpNotificationList.vue')
+        },
+        {
           path: 'ai-chat',
           name: 'EmpAiChat',
           component: () => import('../components/emp/EmpAiChat.vue')

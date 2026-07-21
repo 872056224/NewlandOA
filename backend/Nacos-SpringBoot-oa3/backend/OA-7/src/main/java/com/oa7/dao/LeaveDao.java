@@ -19,6 +19,9 @@ public interface LeaveDao {
     @Select("SELECT * FROM day.leave WHERE status=#{status} ORDER BY start_date DESC")
     List<Leave> selectByStatus(@Param("status") String status);
 
+    @Select("SELECT * FROM day.leave WHERE id=#{id}")
+    Leave selectById(@Param("id") String id);
+
     @Update("UPDATE day.leave SET status=#{status} WHERE id=#{id}")
     int updateStatus(@Param("id") String id, @Param("status") String status);
 

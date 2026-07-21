@@ -123,15 +123,25 @@
 
     <!-- 补签申请按钮 -->
     <div class="retroactive-section">
-      <el-button type="warning" @click="showRetroactiveDialog = true" :disabled="isOnLeave" size="large">
+      <el-button type="warning" @click="openRetroactiveDialog" :disabled="isOnLeave" size="large">
         申请补签
       </el-button>
-      <span class="retroactive-hint">漏签了？可申请补签当天的签到记录</span>
+      <span class="retroactive-hint">漏签了？可申请补签本周内的签到记录</span>
     </div>
 
     <!-- 补签申请对话框 -->
     <el-dialog v-model="showRetroactiveDialog" title="申请补签" width="420px" center>
-      <el-form :model="retroactiveForm" label-width="80px">
+      <el-form :model="retroactiveForm" label-width="85px">
+        <el-form-item label="补签日期">
+          <el-date-picker
+            v-model="retroactiveForm.date"
+            type="date"
+            placeholder="选择补签日期"
+            style="width: 100%"
+            value-format="YYYY-MM-DD"
+            :disabled-date="disableRetroDate"
+          />
+        </el-form-item>
         <el-form-item label="补签类型">
           <el-select v-model="retroactiveForm.type" style="width: 100%">
             <el-option label="上班签到 (上午)" value="a" />
@@ -235,9 +245,29 @@ const isOnLeave = ref(false)  // 今天是否有已批准的请假
 const showRetroactiveDialog = ref(false)
 const retroactiveSubmitting = ref(false)
 const retroactiveForm = reactive({
+  date: '',
   type: 'a',
   reason: ''
 })
+
+// 计算当周的周一和周日
+const getWeekRange = () => {
+  const now = new Date()
+  const dayOfWeek = now.getDay() // 0=Sun, 1=Mon...
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+  monday.setHours(0,0,0,0)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  sunday.setHours(23,59,59,999)
+  return { monday, sunday }
+}
+
+// 限制补签日期只能在当周
+const disableRetroDate = (time: Date) => {
+  const { monday, sunday } = getWeekRange()
+  return time.getTime() < monday.getTime() || time.getTime() > sunday.getTime()
+}
 
 // 定时器
 let timeInterval: any = null
@@ -596,27 +626,37 @@ const getLeaveStatus = async () => {
   }
 }
 
+// 打开补签对话框（默认选中今天）
+const openRetroactiveDialog = () => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  retroactiveForm.date = `${y}-${m}-${d}`
+  showRetroactiveDialog.value = true
+}
+
 // 提交补签申请
 const submitRetroactive = async () => {
+  if (!retroactiveForm.date) {
+    ElMessage.warning('请选择补签日期')
+    return
+  }
   if (!retroactiveForm.reason.trim()) {
     ElMessage.warning('请填写补签原因')
     return
   }
   retroactiveSubmitting.value = true
   try {
-    const today = new Date()
-    const dateStr = today.getFullYear() + '-' +
-      String(today.getMonth() + 1).padStart(2, '0') + '-' +
-      String(today.getDate()).padStart(2, '0')
-
     const response = await axios.post('/api/v1/employee/attendance/retroactive/apply', {
-      signDate: dateStr,
+      signDate: retroactiveForm.date,
       type: retroactiveForm.type,
       reason: retroactiveForm.reason
     })
     if (response.data && response.data.code === 200) {
       ElMessage.success('补签申请已提交，等待管理员审批')
       showRetroactiveDialog.value = false
+      retroactiveForm.date = ''
       retroactiveForm.reason = ''
     } else {
       ElMessage.error(response.data?.message || '提交失败')

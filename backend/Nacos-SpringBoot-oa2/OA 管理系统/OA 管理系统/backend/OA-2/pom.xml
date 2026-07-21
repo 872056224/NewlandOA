@@ -99,12 +99,18 @@
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
         
+        <!-- WebSocket 依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- Elasticsearch 依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
         </dependency>
-        
+
         <!-- Elasticsearch REST High Level Client -->
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
