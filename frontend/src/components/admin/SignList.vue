@@ -1,9 +1,16 @@
 <template>
-  <div class="sign-list">
-    <b class="page-title">签到时间列表</b>
+  <div class="apple-page">
+    <b class="apple-title" style="margin-bottom: 20px; display: block;">签到时间列表</b>
     
     <!-- 数据展现表格 -->
-    <el-table :data="tableData" v-loading="loading">
+    <el-table
+      :data="tableData"
+      v-loading="loading"
+      :border="false"
+      stripe
+      header-cell-class-name="apple-table-header"
+      class="el-table--borderless"
+    >
       <el-table-column 
         label="签到日期" 
         prop="date" 
@@ -27,6 +34,7 @@
       @size-change="handleSizeChange"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px;"
+      background="false"
     />
 
     <!-- 查看具体签到信息对话框 -->
@@ -59,7 +67,7 @@
             style="background-color: white; width: 150px;"
             v-model="editFormData.morningSignedCount"
           />
-          <el-button @click="showSignCount('a')" type="warning" style="margin-left: 10px;">
+          <el-button @click="showSignCount('a')" class="apple-btn" style="margin-left: 10px;">
             查看详情
           </el-button>
         </el-form-item>
@@ -69,7 +77,7 @@
             style="background-color: white; width: 150px;"
             v-model="editFormData.morningUnsignedCount"
           />
-          <el-button @click="showNoSignCount('a')" type="warning" style="margin-left: 10px;">
+          <el-button @click="showNoSignCount('a')" class="apple-btn" style="margin-left: 10px;">
             查看详情
           </el-button>
         </el-form-item>
@@ -81,7 +89,7 @@
             style="background-color: white; width: 150px;"
             v-model="editFormData.eveningSignedCount"
           />
-          <el-button @click="showSignCount('p')" type="warning" style="margin-left: 10px;">
+          <el-button @click="showSignCount('p')" class="apple-btn" style="margin-left: 10px;">
             查看详情
           </el-button>
         </el-form-item>
@@ -91,7 +99,7 @@
             style="background-color: white; width: 150px;"
             v-model="editFormData.eveningUnsignedCount"
           />
-          <el-button @click="showNoSignCount('p')" type="warning" style="margin-left: 10px;">
+          <el-button @click="showNoSignCount('p')" class="apple-btn" style="margin-left: 10px;">
             查看详情
           </el-button>
         </el-form-item>
@@ -267,14 +275,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sign-list {
-  padding: 20px;
+:deep(.apple-table-header .cell) {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
 }
 
-.page-title {
-  color: red;
-  font-size: 20px;
-  margin-bottom: 20px;
-  display: block;
+:deep(.el-table--borderless) {
+  border: none;
 }
-</style> 
+:deep(.el-table--borderless::before) {
+  display: none;
+}
+
+:deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-border-radius: 0;
+  --el-pagination-button-color: var(--apple-text);
+  --el-pagination-hover-color: var(--apple-blue);
+  --el-pagination-disabled-bg-color: transparent;
+}
+</style>

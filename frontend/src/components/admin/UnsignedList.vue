@@ -1,18 +1,27 @@
 <template>
-  <div class="unsigned-list">
-    <b class="page-title">未签到员工</b>
-    
-    <div class="toolbar">
-      <el-button @click="showToday" type="primary">查看今日</el-button>
+  <div class="apple-page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <b class="apple-title" style="margin: 0;">未签到员工</b>
+      <div>
+        <el-button @click="showToday" class="apple-btn apple-btn-primary">查看今日</el-button>
+      </div>
     </div>
 
     <!-- 数据展现表格 -->
-    <el-table :data="filteredTableData" v-loading="loading">
+    <el-table
+      :data="filteredTableData"
+      v-loading="loading"
+      :border="false"
+      stripe
+      header-cell-class-name="apple-table-header"
+      class="el-table--borderless"
+    >
       <el-table-column align="center">
         <template #header>
           <div class="header-content">
             <el-icon><Menu /></el-icon>
             <el-input
+              class="apple-input"
               v-model="searchUsers"
               placeholder="请输入员工工号"
               size="small"
@@ -59,6 +68,7 @@
       @size-change="handleSizeChange"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px"
+      background="false"
     />
 
     <!-- 补签确认对话框 -->
@@ -70,8 +80,8 @@
       <span>确定要补签吗？</span>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="success" @click="confirmMakeUp">补签</el-button>
+          <el-button class="apple-btn" @click="dialogVisible = false">取消</el-button>
+          <el-button class="apple-btn apple-btn-primary" @click="confirmMakeUp">补签</el-button>
         </span>
       </template>
     </el-dialog>
@@ -213,22 +223,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.unsigned-list {
-  padding: 20px;
-}
-
-.page-title {
-  color: red;
-  font-size: 20px;
-  margin-bottom: 20px;
-  display: block;
-}
-
-.toolbar {
-  float: right;
-  margin-bottom: 10px;
-}
-
 .header-content {
   display: flex;
   align-items: center;
@@ -237,4 +231,25 @@ onMounted(() => {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+
+:deep(.apple-table-header .cell) {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+}
+
+:deep(.el-table--borderless) {
+  border: none;
+}
+:deep(.el-table--borderless::before) {
+  display: none;
+}
+
+:deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-border-radius: 0;
+  --el-pagination-button-color: var(--apple-text);
+  --el-pagination-hover-color: var(--apple-blue);
+  --el-pagination-disabled-bg-color: transparent;
+}
+</style>

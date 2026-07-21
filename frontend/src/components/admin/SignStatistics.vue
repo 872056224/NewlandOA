@@ -5,11 +5,10 @@
         <el-icon class="title-icon"><TrendCharts /></el-icon>
         近五日签到情况统计视图
       </h1>
-      <el-button 
-        @click="refreshChart" 
+      <el-button
+        @click="refreshChart"
         :loading="loading"
-        type="primary" 
-        class="refresh-btn"
+        class="apple-btn apple-btn-primary"
       >
         <el-icon><Refresh /></el-icon>
         刷新数据
@@ -58,7 +57,7 @@ const initChart = () => {
       title: {
         text: '近五日签到图',
         textStyle: {
-          color: '#333'
+          color: '#1D1D1F'
         }
       },
       tooltip: {
@@ -68,7 +67,10 @@ const initChart = () => {
         }
       },
       legend: {
-        data: ['已签到人数', '未签到人数', '需签到总人数']
+        data: ['已签到人数', '未签到人数', '需签到总人数'],
+        textStyle: {
+          color: '#86868B'
+        }
       },
       grid: {
         left: '3%',
@@ -90,7 +92,7 @@ const initChart = () => {
           type: 'bar',
           data: [],
           itemStyle: {
-            color: '#67C23A'
+            color: '#34C759'
           }
         },
         {
@@ -98,7 +100,7 @@ const initChart = () => {
           type: 'bar',
           data: [],
           itemStyle: {
-            color: '#F56C6C'
+            color: '#FF9500'
           }
         },
         {
@@ -106,12 +108,12 @@ const initChart = () => {
           type: 'bar',
           data: [],
           itemStyle: {
-            color: '#409EFF'
+            color: '#0071E3'
           }
         }
       ]
     }
-    
+
     myChart.setOption(defaultOption)
     
     // 监听窗口大小变化
@@ -147,7 +149,7 @@ const loadChartData = async () => {
         title: {
           text: '近五日签到图',
           textStyle: {
-            color: '#333'
+            color: '#1D1D1F'
           }
         },
         tooltip: {
@@ -157,7 +159,10 @@ const loadChartData = async () => {
           }
         },
         legend: {
-          data: ['已签到人数', '未签到人数', '需签到总人数']
+          data: ['已签到人数', '未签到人数', '需签到总人数'],
+          textStyle: {
+            color: '#86868B'
+          }
         },
         grid: {
           left: '3%',
@@ -179,7 +184,7 @@ const loadChartData = async () => {
             type: 'bar',
             data: signedData,
             itemStyle: {
-              color: '#67C23A'
+              color: '#34C759'
             }
           },
           {
@@ -187,7 +192,7 @@ const loadChartData = async () => {
             type: 'bar',
             data: unsignedData,
             itemStyle: {
-              color: '#F56C6C'
+              color: '#FF9500'
             }
           },
           {
@@ -195,7 +200,7 @@ const loadChartData = async () => {
             type: 'bar',
             data: totalData,
             itemStyle: {
-              color: '#409EFF'
+              color: '#0071E3'
             }
           }
         ]
@@ -235,8 +240,8 @@ onMounted(async () => {
 
 <style scoped>
 .sign-statistics {
-  padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 32px;
+  background: var(--apple-bg);
   min-height: 100vh;
 }
 
@@ -245,24 +250,24 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--apple-white);
+  padding: 20px 24px;
+  border-radius: var(--apple-radius-card);
+  box-shadow: var(--apple-shadow);
 }
 
 .chart-title {
   display: flex;
   align-items: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
-  color: #303133;
+  color: var(--apple-text);
   margin: 0;
 }
 
 .title-icon {
   margin-right: 8px;
-  color: #409EFF;
+  color: var(--apple-blue);
 }
 
 .refresh-btn {
@@ -271,7 +276,9 @@ onMounted(async () => {
 
 .chart-card {
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: var(--apple-radius-card);
+  box-shadow: var(--apple-shadow);
+  border: none;
 }
 
 .chart-container {
@@ -299,14 +306,14 @@ onMounted(async () => {
 
 .loading-icon {
   font-size: 48px;
-  color: #409EFF;
+  color: var(--apple-blue);
   animation: rotate 2s linear infinite;
   margin-bottom: 16px;
 }
 
 .loading-text {
   font-size: 16px;
-  color: #606266;
+  color: var(--apple-text-secondary);
   margin: 0;
 }
 
@@ -320,13 +327,13 @@ onMounted(async () => {
 
 .empty-icon {
   font-size: 64px;
-  color: #C0C4CC;
+  color: var(--apple-text-tertiary);
   margin-bottom: 16px;
 }
 
 .empty-text {
   font-size: 16px;
-  color: #909399;
+  color: var(--apple-text-secondary);
   margin-bottom: 16px;
 }
 

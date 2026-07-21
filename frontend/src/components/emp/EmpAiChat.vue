@@ -15,7 +15,7 @@
             </p>
           </div>
         </div>
-        <el-button text type="info" @click="clearChat">
+        <el-button class="apple-btn" @click="clearChat">
           <el-icon><Delete /></el-icon>
           <span style="margin-left: 4px">新对话</span>
         </el-button>
@@ -100,8 +100,7 @@
           @keydown.enter.exact.prevent="send()"
         />
         <el-button
-          class="send-btn"
-          type="primary"
+          class="send-btn apple-btn apple-btn-primary"
           :disabled="!input.trim() || loading"
           :loading="loading"
           @click="send()"
@@ -366,17 +365,18 @@ onMounted(() => {
   height: 100%;
   display: flex;
   justify-content: center;
+  background: var(--apple-bg);
 }
 
 .chat-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 860px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(125, 120, 120, 0.1);
+  background: var(--apple-white);
+  border-radius: var(--apple-radius-card);
+  box-shadow: var(--apple-shadow);
   overflow: hidden;
 }
 
@@ -385,9 +385,9 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
-  border-bottom: 1px solid #ebeef5;
-  background: linear-gradient(135deg, #033363 0%, #0a4d8f 100%);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--apple-border);
+  background: var(--apple-white);
   flex-shrink: 0;
 }
 
@@ -399,15 +399,15 @@ onMounted(() => {
 
 .chat-header .title {
   margin: 0;
-  font-size:18px;
-  font-weight: bold;
-  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--apple-text);
 }
 
 .chat-header .subtitle {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--apple-text-secondary);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -421,27 +421,25 @@ onMounted(() => {
 }
 
 .status-dot.online {
-  background-color: #67c23a;
-  box-shadow: 0 0 4px #67c23a;
+  background-color: var(--apple-green);
+  box-shadow: 0 0 4px var(--apple-green);
 }
 
 .status-dot.offline {
-  background-color: #e6a23c;
+  background-color: var(--apple-orange);
 }
 
 .status-dot.checking {
-  background-color: #909399;
+  background-color: var(--apple-text-tertiary);
   animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  50% {
-    opacity: 0.3;
-  }
+  50% { opacity: 0.3; }
 }
 
 .chat-header .el-button {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--apple-text-secondary);
 }
 
 /* 头像 */
@@ -458,25 +456,26 @@ onMounted(() => {
 }
 
 .bot-avatar {
-  background: linear-gradient(135deg, #409eff 0%, #1d6fd1 100%);
+  background: var(--apple-blue);
 }
 
 .header-avatar {
   width: 40px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--apple-bg-secondary);
+  color: var(--apple-text-secondary);
 }
 
 .user-avatar {
-  background-color: #909399;
+  background: var(--apple-text-tertiary);
 }
 
 /* 消息区 */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
-  background-color: #f5f7fa;
+  padding: 24px;
+  background: var(--apple-bg);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -504,38 +503,37 @@ onMounted(() => {
 
 /* 气泡 */
 .bubble {
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 12px 18px;
+  border-radius: 18px;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .bubble.assistant {
-  background-color: white;
-  color: #303133;
-  border: 1px solid #ebeef5;
-  border-top-left-radius: 2px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  background: var(--apple-white);
+  color: var(--apple-text);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--apple-shadow);
 }
 
 .bubble.user {
-  background: linear-gradient(135deg, #409eff 0%, #1d6fd1 100%);
+  background: var(--apple-blue);
   color: white;
-  border-top-right-radius: 2px;
+  border-bottom-right-radius: 4px;
 }
 
 .bubble-error {
   background-color: #fef0f0 !important;
   border-color: #fbc4c4 !important;
-  color: #f56c6c !important;
+  color: var(--apple-red) !important;
 }
 
 .via-tag {
   margin-top: 4px;
   font-size: 11px;
-  color: #c0c4cc;
+  color: var(--apple-text-tertiary);
 }
 
 /* 相关/推荐问题 chips */
@@ -549,7 +547,7 @@ onMounted(() => {
 
 .chips-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--apple-text-secondary);
 }
 
 .chip {
@@ -572,7 +570,7 @@ onMounted(() => {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: #c0c4cc;
+  background-color: var(--apple-text-tertiary);
   animation: typing-bounce 1.2s infinite ease-in-out;
 }
 
@@ -585,9 +583,7 @@ onMounted(() => {
 }
 
 @keyframes typing-bounce {
-  0%,
-  60%,
-  100% {
+  0%, 60%, 100% {
     transform: translateY(0);
     opacity: 0.5;
   }
@@ -597,23 +593,43 @@ onMounted(() => {
   }
 }
 
-/* 输入区 */
+/* 输入区 - Apple clean style */
 .chat-input {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  padding: 14px 20px;
-  border-top: 1px solid #ebeef5;
-  background-color: white;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--apple-border);
+  background: var(--apple-white);
   flex-shrink: 0;
 }
 
-.chat-input .el-textarea {
-  flex: 1;
+.chat-input :deep(.el-textarea__inner) {
+  border: none !important;
+  border-radius: var(--apple-radius) !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  background: var(--apple-bg) !important;
+  box-shadow: none !important;
+  resize: none;
+}
+
+.chat-input :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.15) !important;
+}
+
+.chat-input :deep(.el-input__count) {
+  background: transparent !important;
+  color: var(--apple-text-tertiary);
+  font-size: 11px;
+  bottom: 6px;
 }
 
 .send-btn {
-  height: 54px;
-  padding: 0 22px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: var(--apple-radius-button) !important;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 </style>

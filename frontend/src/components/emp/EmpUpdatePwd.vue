@@ -1,50 +1,52 @@
 <template>
-  <div class="update-pwd">
-    <div class="pwd-container">
-      <p class="pwd-title">修改密码</p>
-      
+  <div class="apple-page update-pwd">
+    <div class="apple-card pwd-card">
+      <h2 class="apple-title">修改密码</h2>
+
       <el-form
         ref="editFormRef"
         :model="editFormData"
         :rules="rules"
-        class="demo-ruleForm"
-        label-width="80px"
+        label-position="top"
         status-icon
         v-loading="loading"
       >
         <el-form-item label="员工工号" prop="number">
-          <el-input :disabled="true" v-model="editFormData.number" />
+          <el-input :disabled="true" v-model="editFormData.number" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="旧密码" prop="old_pwd">
           <el-input
             autocomplete="off"
             placeholder="请输入旧密码"
             type="password"
             v-model="editFormData.old_pwd"
+            class="apple-input"
           />
         </el-form-item>
-        
-        <el-form-item label="密码" prop="pass">
+
+        <el-form-item label="新密码" prop="pass">
           <el-input
             autocomplete="off"
             placeholder="请输入新的密码"
             type="password"
             v-model="editFormData.pass"
+            class="apple-input"
           />
         </el-form-item>
-        
+
         <el-form-item label="确认密码" prop="checkPass">
           <el-input
             autocomplete="off"
             placeholder="请再次输入新的密码以核对"
             type="password"
             v-model="editFormData.checkPass"
+            class="apple-input"
           />
         </el-form-item>
-        
+
         <el-form-item>
-          <el-button @click="updatePwd" type="primary" :loading="updating">
+          <el-button class="apple-btn apple-btn-primary" @click="updatePwd" :loading="updating">
             确认修改
           </el-button>
         </el-form-item>
@@ -157,33 +159,30 @@ onMounted(() => {
 
 <style scoped>
 .update-pwd {
-  padding: 20px;
   min-height: 100%;
-  background-color: #f5f5f5;
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
-.pwd-container {
-  width: 500px;
-  background-color: white;
-  border-radius: 8px;
-  padding: 30px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+.pwd-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
 }
 
-.pwd-title {
-  color: #606266;
-  font-size: 20px;
-  font-weight: bold;
-  margin: 0 0 20px 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #409EFF;
+.pwd-card :deep(.apple-title) {
+  margin-bottom: 28px;
 }
 
-.el-form {
-  margin-top: 20px;
+.pwd-card :deep(.el-form-item__label) {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--apple-text-secondary);
+  padding-bottom: 4px;
+}
+
+.pwd-card :deep(.el-input.is-disabled .el-input__wrapper) {
+  background-color: var(--apple-bg);
 }
 </style> 

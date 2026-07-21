@@ -1,22 +1,31 @@
 <template>
-  <div class="kb-manage">
-    <div class="page-header">
-      <b class="page-title">AI 客服知识库管理</b>
-      <div class="page-actions">
+  <div class="apple-page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+      <b class="apple-title" style="margin: 0;">AI 客服知识库管理</b>
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
         <el-input
+          class="apple-input"
           v-model="searchKeyword"
           placeholder="搜索问题/答案/关键词"
           clearable
-          style="width: 240px; margin-right: 12px;"
+          style="width: 240px;"
           @keyup.enter="handleSearch"
         />
-        <el-button @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReloadIndex" :loading="reloading">重建索引</el-button>
-        <el-button @click="showAdd" type="primary">添加知识</el-button>
+        <el-button class="apple-btn" @click="handleSearch">搜索</el-button>
+        <el-button class="apple-btn" @click="handleReloadIndex" :loading="reloading">重建索引</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="showAdd">添加知识</el-button>
       </div>
     </div>
 
-    <el-table :data="tableData" v-loading="loading" row-key="id">
+    <el-table
+      :data="tableData"
+      v-loading="loading"
+      row-key="id"
+      :border="false"
+      stripe
+      header-cell-class-name="apple-table-header"
+      class="el-table--borderless"
+    >
       <el-table-column label="ID" prop="id" width="70" align="center" />
       <el-table-column label="标准问题" prop="question" min-width="180" show-overflow-tooltip />
       <el-table-column label="答案" prop="answer" min-width="260" show-overflow-tooltip />
@@ -53,6 +62,7 @@
       @size-change="handleSizeChange"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px;"
+      background="false"
     />
 
     <el-dialog
@@ -90,8 +100,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addDoc" type="primary" :loading="submitting">添加</el-button>
-        <el-button @click="resetForm('addForm')">重置</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="addDoc" :loading="submitting">添加</el-button>
+        <el-button class="apple-btn" @click="resetForm('addForm')">重置</el-button>
       </template>
     </el-dialog>
 
@@ -128,7 +138,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button type="warning" @click="updateDoc" :loading="submitting">保存</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="updateDoc" :loading="submitting">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -396,28 +406,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.kb-manage {
-  padding: 20px;
+:deep(.apple-table-header .cell) {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
+:deep(.el-table--borderless) {
+  border: none;
+}
+:deep(.el-table--borderless::before) {
+  display: none;
 }
 
-.page-title {
-  color: #c0392b;
-  font-size: 20px;
-}
-
-.page-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+:deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-border-radius: 0;
+  --el-pagination-button-color: var(--apple-text);
+  --el-pagination-hover-color: var(--apple-blue);
+  --el-pagination-disabled-bg-color: transparent;
 }
 </style>

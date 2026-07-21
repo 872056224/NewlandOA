@@ -1,42 +1,41 @@
 <template>
-  <div class="emp-info">
-    <div class="info-container">
-      <p class="info-title">个人信息</p>
-      
+  <div class="apple-page emp-info">
+    <div class="apple-card info-card">
+      <h2 class="apple-title">个人信息</h2>
+
       <el-form
         ref="editFormRef"
         :model="editFormData"
         :rules="rules"
-        :label-position="'right'"
-        label-width="80px"
+        label-position="top"
         v-loading="loading"
       >
         <el-form-item label="工号" prop="number">
-          <el-input v-model="editFormData.number" :disabled="true" />
+          <el-input v-model="editFormData.number" :disabled="true" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="名字" prop="name">
-          <el-input v-model="editFormData.name" />
+          <el-input v-model="editFormData.name" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="出生" prop="birthday">
-          <el-input v-model="editFormData.birthday" type="date" />
+          <el-input v-model="editFormData.birthday" type="date" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="地址" prop="address">
-          <el-input v-model="editFormData.address" />
+          <el-input v-model="editFormData.address" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="部门" prop="dept_name">
-          <el-input v-model="editFormData.dept_name" :disabled="true" />
+          <el-input v-model="editFormData.dept_name" :disabled="true" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item label="职务" prop="duty_name">
-          <el-input v-model="editFormData.duty_name" :disabled="true" />
+          <el-input v-model="editFormData.duty_name" :disabled="true" class="apple-input" />
         </el-form-item>
-        
+
         <el-form-item>
-          <el-button type="warning" @click="updateEmp" :loading="saving">
+          <el-button class="apple-btn apple-btn-primary" @click="updateEmp" :loading="saving">
             确认修改
           </el-button>
         </el-form-item>
@@ -141,33 +140,30 @@ onMounted(() => {
 
 <style scoped>
 .emp-info {
-  padding: 20px;
   min-height: 100%;
-  background-color: #f5f5f5;
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
-.info-container {
-  width: 850px;
-  background-color: rgb(255, 255, 255);
-  border-radius: 8px;
-  padding: 30px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+.info-card {
+  width: 100%;
+  max-width: 640px;
+  padding: 40px;
 }
 
-.info-title {
-  color: #606266;
-  font-size: 20px;
-  font-weight: bold;
-  margin: 0 0 20px 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #409EFF;
+.info-card :deep(.apple-title) {
+  margin-bottom: 28px;
 }
 
-.el-form {
-  margin-top: 20px;
+.info-card :deep(.el-form-item__label) {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--apple-text-secondary);
+  padding-bottom: 4px;
 }
-</style> 
+
+.info-card :deep(.el-input.is-disabled .el-input__wrapper) {
+  background-color: var(--apple-bg);
+}
+</style>

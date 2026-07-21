@@ -1,22 +1,27 @@
 <template>
-  <div class="emp-list">
-    <div class="page-header">
-      <b class="page-title">员工信息管理</b>
-      <div class="page-actions">
-        <el-button @click="showAddEmp" type="primary">添加员工</el-button>
+  <div class="apple-page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <b class="apple-title" style="margin: 0;">员工信息管理</b>
+      <div>
+        <el-button @click="showAddEmp" class="apple-btn apple-btn-primary">添加员工</el-button>
       </div>
     </div>
 
     <!-- 数据展现表格 -->
-    <el-table 
-      :data="filteredTableData" 
+    <el-table
+      :data="filteredTableData"
       v-loading="loading"
+      :border="false"
+      stripe
+      header-cell-class-name="apple-table-header"
+      class="el-table--borderless"
     >
       <el-table-column align="center">
         <template #header>
           <div class="table-header">
             <el-icon><Menu /></el-icon>
             <el-input
+              class="apple-input"
               placeholder="请输员工名字"
               size="small"
               style="width: 200px; margin-left: 10px;"
@@ -50,6 +55,7 @@
       @size-change="handleSizeChange"
       layout="total, sizes, prev, pager, next, jumper"
       style="text-align: center; margin-top: 20px;"
+      background="false"
     />
 
     <!-- 添加员工对话框 -->
@@ -97,22 +103,22 @@
       </el-form>
       
       <template #footer>
-        <el-button type="primary" @click="addEmp" :loading="adding">添加</el-button>
-        <el-button @click="resetForm('addForm')">重置</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="addEmp" :loading="adding">添加</el-button>
+        <el-button class="apple-btn" @click="resetForm('addForm')">重置</el-button>
       </template>
     </el-dialog>
 
     <!-- 编辑员工对话框 -->
-    <el-dialog 
-      v-model="dialogVisible.edit" 
-      @close="resetForm('editForm')" 
+    <el-dialog
+      v-model="dialogVisible.edit"
+      @close="resetForm('editForm')"
       title="编辑员工信息"
       width="500px"
     >
-      <el-form 
-        :model="editFormData" 
-        :rules="rules" 
-        ref="editFormRef" 
+      <el-form
+        :model="editFormData"
+        :rules="rules"
+        ref="editFormRef"
         label-width="100px"
       >
         <el-form-item label="员工工号" prop="number">
@@ -148,9 +154,9 @@
           </el-select>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
-        <el-button @click="updateEmp" type="warning" :loading="updating">修改</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="updateEmp" :loading="updating">修改</el-button>
       </template>
     </el-dialog>
 
@@ -162,8 +168,8 @@
     >
       <span>将同时清除员工的【考勤】数据！</span>
       <template #footer>
-        <el-button @click="dialogVisible.delete = false">取 消</el-button>
-        <el-button @click="deleteEmp" type="danger" :loading="deleting">删除</el-button>
+        <el-button class="apple-btn" @click="dialogVisible.delete = false">取 消</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="deleteEmp" :loading="deleting">删除</el-button>
       </template>
     </el-dialog>
   </div>
@@ -476,24 +482,29 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.emp-list {
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-title {
-  color: red;
-  font-size: 20px;
-}
-
 .table-header {
   display: flex;
   align-items: center;
 }
-</style> 
+
+:deep(.apple-table-header .cell) {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+}
+
+:deep(.el-table--borderless) {
+  border: none;
+}
+:deep(.el-table--borderless::before) {
+  display: none;
+}
+
+:deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-border-radius: 0;
+  --el-pagination-button-color: var(--apple-text);
+  --el-pagination-hover-color: var(--apple-blue);
+  --el-pagination-disabled-bg-color: transparent;
+}
+</style>

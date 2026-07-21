@@ -1,14 +1,21 @@
 <template>
-  <div class="duty-manage">
-    <div class="page-header">
-      <b class="page-title">职务信息管理</b>
-      <div class="page-actions">
-        <el-button @click="showAddDuty" type="primary">添加职务</el-button>
+  <div class="apple-page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <b class="apple-title" style="margin: 0;">职务信息管理</b>
+      <div>
+        <el-button @click="showAddDuty" class="apple-btn apple-btn-primary">添加职务</el-button>
       </div>
     </div>
 
     <!-- 数据展现表格 -->
-    <el-table :data="tableData" v-loading="loading">
+    <el-table
+      :data="tableData"
+      v-loading="loading"
+      :border="false"
+      stripe
+      header-cell-class-name="apple-table-header"
+      class="el-table--borderless"
+    >
       <el-table-column 
         label="职务序号" 
         prop="duty_id" 
@@ -44,6 +51,7 @@
       @size-change="handleSizeChange"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px;"
+      background="false"
     />
 
     <!-- 添加职务对话框 -->
@@ -65,22 +73,22 @@
       </el-form>
       
       <template #footer>
-        <el-button @click="addDuty" type="primary" :loading="adding">添加</el-button>
-        <el-button @click="resetForm('addForm')">重置</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="addDuty" :loading="adding">添加</el-button>
+        <el-button class="apple-btn" @click="resetForm('addForm')">重置</el-button>
       </template>
     </el-dialog>
 
     <!-- 编辑职务对话框 -->
-    <el-dialog 
-      v-model="dialogVisible.edit" 
-      @close="resetForm('editForm')" 
+    <el-dialog
+      v-model="dialogVisible.edit"
+      @close="resetForm('editForm')"
       title="编辑职务信息"
       width="400px"
     >
-      <el-form 
-        :model="editFormData" 
-        :rules="rules" 
-        ref="editFormRef" 
+      <el-form
+        :model="editFormData"
+        :rules="rules"
+        ref="editFormRef"
         label-width="100px"
       >
         <el-form-item label="职务序号" prop="duty_id">
@@ -90,9 +98,9 @@
           <el-input v-model="editFormData.duty_name" />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
-        <el-button type="warning" @click="updateDuty" :loading="updating">修改</el-button>
+        <el-button class="apple-btn apple-btn-primary" @click="updateDuty" :loading="updating">修改</el-button>
       </template>
     </el-dialog>
   </div>
@@ -249,18 +257,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.duty-manage {
-  padding: 20px;
+:deep(.apple-table-header .cell) {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+:deep(.el-table--borderless) {
+  border: none;
+}
+:deep(.el-table--borderless::before) {
+  display: none;
 }
 
-.page-title {
-  color: red;
+:deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-border-radius: 0;
+  --el-pagination-button-color: var(--apple-text);
+  --el-pagination-hover-color: var(--apple-blue);
+  --el-pagination-disabled-bg-color: transparent;
 }
-</style> 
+</style>

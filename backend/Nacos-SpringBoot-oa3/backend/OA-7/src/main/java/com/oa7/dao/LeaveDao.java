@@ -21,4 +21,8 @@ public interface LeaveDao {
 
     @Update("UPDATE day.leave SET status=#{status} WHERE id=#{id}")
     int updateStatus(@Param("id") String id, @Param("status") String status);
+
+    @Select("SELECT count(*) FROM day.leave WHERE number=#{number} AND status='已批准' " +
+            "AND DATE(start_date) <= #{today} AND DATE(end_date) >= #{today}")
+    int countApprovedLeaveToday(@Param("number") int number, @Param("today") String today);
 }

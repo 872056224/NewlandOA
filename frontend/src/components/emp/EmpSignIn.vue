@@ -1,122 +1,113 @@
 <template>
   <div class="sign-in">
-    <div class="header-section">
-      <h2 class="page-title">
-        <el-icon class="title-icon"><Clock /></el-icon>
-        今日签到
-      </h2>
-      <div class="current-time">
-        <span>当前时间：{{ currentTime }}</span>
+    <!-- 顶部签到大时钟 -->
+    <div class="clock-section">
+      <div class="clock-display">
+        <div class="clock-time">{{ currentTime.split(' ')[1] || currentTime }}</div>
+        <div class="clock-date">{{ currentTime.split(' ')[0] || '' }}</div>
+        <div class="clock-label">今日签到</div>
       </div>
     </div>
 
-    <!-- 今日签到状态卡片 -->
+    <!-- 请假状态提示 -->
+    <div v-if="isOnLeave" class="leave-banner">
+      <el-icon :size="20"><InfoFilled /></el-icon>
+      <span>你今天有已批准的请假，无需签到打卡</span>
+    </div>
+
+    <!-- 上班/下班签到卡 -->
     <div class="sign-cards">
-      <el-row :gutter="20">
+      <el-row :gutter="16">
         <el-col :span="12" v-for="signRecord in todaySignData" :key="signRecord.type">
-          <el-card class="sign-card" :class="getCardClass(signRecord)">
+          <div class="apple-card sign-card" :class="getCardClass(signRecord)">
             <div class="card-header">
-              <h3>{{ getSignTypeText(signRecord.type) }}</h3>
-              <el-tag 
-                :type="getTagType(signRecord.state)" 
-                effect="dark"
-                size="large"
-              >
+              <h3 class="card-title">{{ getSignTypeText(signRecord.type) }}</h3>
+              <span class="card-state" :class="isOnLeave ? 'state-leave' : (signRecord.state === '已签到' ? 'state-done' : 'state-pending')">
                 {{ getStateText(signRecord) }}
-              </el-tag>
+              </span>
             </div>
-            
-            <div class="card-content">
-              <div class="time-info">
-                <el-icon class="time-icon"><AlarmClock /></el-icon>
-                <span>标准时间：{{ getStandardTime(signRecord.type) }}</span>
+
+            <div class="card-body">
+              <div class="info-row">
+                <span class="info-label">标准时间</span>
+                <span class="info-value">{{ getStandardTime(signRecord.type) }}</span>
               </div>
-              
-              <div class="actual-time" v-if="signRecord.state === '已签到'">
-                <el-icon class="actual-icon"><Check /></el-icon>
-                <span>实际时间：{{ formatSignTime(signRecord.signDate) }}</span>
+              <div class="info-row" v-if="signRecord.state === '已签到'">
+                <span class="info-label">实际时间</span>
+                <span class="info-value signed-time">{{ formatSignTime(signRecord.signDate) }}</span>
               </div>
-              
-              <div class="location-info" v-if="signRecord.sign_address">
-                <el-icon class="location-icon"><Location /></el-icon>
-                <span>签到地点：{{ signRecord.sign_address }}</span>
+              <div class="info-row" v-if="signRecord.sign_address">
+                <span class="info-label">签到地点</span>
+                <span class="info-value location-text">{{ signRecord.sign_address }}</span>
               </div>
             </div>
-            
-            <div class="card-footer">
-                             <el-button 
-                 :type="getButtonType(signRecord)"
-                 :disabled="signRecord.state === '已签到'"
-                 @click="handleSign(signRecord)"
-                 :loading="signing && currentSignType === signRecord.type"
-                 size="large"
-                 class="sign-button"
-               >
-                 <el-icon>
-                   <Check v-if="signRecord.state === '已签到'" />
-                   <Clock v-else />
-                 </el-icon>
-                 {{ getButtonText(signRecord) }}
-               </el-button>
+
+            <div class="card-actions">
+              <button
+                :class="signRecord.state === '已签到' ? 'apple-btn btn-signed' : 'apple-btn apple-btn-primary'"
+                :disabled="signRecord.state === '已签到'"
+                @click="handleSign(signRecord)"
+              >
+                {{ getButtonText(signRecord) }}
+              </button>
             </div>
-          </el-card>
+          </div>
         </el-col>
       </el-row>
     </div>
 
-    <!-- 历史签到记录 -->
-    <div class="history-section">
+    <!-- 最近签到记录 -->
+    <div class="apple-card history-section">
       <div class="section-header">
-        <h3>最近签到记录</h3>
-        <el-button @click="refreshData" :loading="loading" type="primary" plain>
+        <h3 class="section-title">最近签到记录</h3>
+        <el-button @click="refreshData" :loading="loading" text>
           <el-icon><Refresh /></el-icon>
           刷新
         </el-button>
       </div>
-      
-      <el-table 
-        :data="historyData" 
-        v-loading="loading" 
-        stripe
+
+      <el-table
+        :data="historyData"
+        v-loading="loading"
         style="width: 100%"
         empty-text="暂无签到记录"
+        class="el-table--borderless"
       >
-        <el-table-column label="日期" width="120">
+        <el-table-column label="日期" width="100">
           <template #default="{ row }">
-            {{ formatDate(row.signDate) }}
+            <span class="cell-text">{{ formatDate(row.signDate) }}</span>
           </template>
         </el-table-column>
-        
-        <el-table-column label="类型" width="100" align="center">
+
+        <el-table-column label="类型" width="70" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'a' ? 'success' : 'warning'" size="small">
+            <span class="type-tag" :class="row.type === 'a' ? 'type-am' : 'type-pm'">
               {{ getSignTypeText(row.type) }}
-            </el-tag>
+            </span>
           </template>
         </el-table-column>
-        
-        <el-table-column label="时间" width="150">
+
+        <el-table-column label="时间" width="110">
           <template #default="{ row }">
-            {{ formatSignTime(row.signDate) }}
+            <span class="cell-text">{{ formatSignTime(row.signDate) }}</span>
           </template>
         </el-table-column>
-        
-        <el-table-column label="状态" width="100" align="center">
+
+        <el-table-column label="状态" width="70" align="center">
           <template #default="{ row }">
-            <el-tag :type="getTagType(row.state)" size="small">
+            <span :class="row.state === '已签到' ? 'state-signed' : 'state-missed'">
               {{ row.state }}
-            </el-tag>
+            </span>
           </template>
         </el-table-column>
-        
-        <el-table-column label="签到地点" min-width="200" show-overflow-tooltip>
+
+        <el-table-column label="签到地点" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
-            <span>{{ row.sign_address || '未记录位置' }}</span>
+            <span class="cell-text location-cell">{{ row.sign_address || '未记录位置' }}</span>
           </template>
         </el-table-column>
       </el-table>
-      
-      <!-- 分页 -->
+
       <div class="pagination-container">
         <el-pagination
           v-model:current-page="currentPage"
@@ -140,13 +131,13 @@
     >
       <div class="dialog-content">
         <div class="confirm-icon">
-          <el-icon size="48" color="#409EFF"><QuestionFilled /></el-icon>
+          <el-icon size="48" color="#0071E3"><QuestionFilled /></el-icon>
         </div>
-        
+
         <p class="confirm-text">
           确定要进行 <strong>{{ getSignTypeText(signInfo.type) }}</strong> 吗？
         </p>
-        
+
         <div class="time-display">
           <p><strong>当前时间：</strong>{{ currentTime }}</p>
           <p><strong>标准时间：</strong>{{ getStandardTime(signInfo.type) }}</p>
@@ -154,7 +145,7 @@
             <strong>状态：</strong>{{ getTimingStatus() }}
           </p>
         </div>
-        
+
         <div class="location-section">
           <el-icon class="location-icon"><Location /></el-icon>
           <span v-if="!locationInfo">正在获取位置信息...</span>
@@ -162,17 +153,18 @@
           <span v-else class="location-success">{{ locationInfo }}</span>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="showSignDialog = false" size="large">
             取消
           </el-button>
-          <el-button 
-            type="primary" 
-            @click="confirmSign" 
+          <el-button
+            type="primary"
+            @click="confirmSign"
             :loading="signing"
             size="large"
+            class="apple-btn apple-btn-primary"
           >
             确认{{ getSignTypeText(signInfo.type) }}
           </el-button>
@@ -185,13 +177,14 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Clock, 
-  AlarmClock, 
-  Check, 
-  Location, 
-  Refresh, 
-  QuestionFilled 
+import {
+  Clock,
+  AlarmClock,
+  Check,
+  Location,
+  Refresh,
+  QuestionFilled,
+  InfoFilled
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
@@ -209,6 +202,7 @@ const historyData = ref<any[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const isOnLeave = ref(false)  // 今天是否有已批准的请假
 
 // 定时器
 let timeInterval: any = null
@@ -261,6 +255,9 @@ const getStandardTime = (type: string): string => {
 
 // 获取状态文本
 const getStateText = (record: any): string => {
+  if (isOnLeave.value) {
+    return '已请假'
+  }
   if (record.state === '已签到') {
     return record.type === 'a' ? '已签到' : '已签退'
   }
@@ -274,6 +271,7 @@ const getTagType = (state: string): string => {
 
 // 获取卡片样式类
 const getCardClass = (record: any): string => {
+  if (isOnLeave.value) return 'on-leave'
   return record.state === '已签到' ? 'signed' : 'unsigned'
 }
 
@@ -284,6 +282,9 @@ const getButtonType = (record: any): string => {
 
 // 获取按钮文本
 const getButtonText = (record: any): string => {
+  if (isOnLeave.value) {
+    return '已请假'
+  }
   if (record.state === '已签到') {
     return record.type === 'a' ? '已签到' : '已签退'
   }
@@ -404,7 +405,7 @@ const getHistoryData = async () => {
 
 // 处理签到
 const handleSign = async (record: any) => {
-  if (record.state === '已签到') {
+  if (isOnLeave.value || record.state === '已签到') {
     return
   }
   
@@ -547,11 +548,25 @@ const getLocationAddress = async (coordinates: string) => {
   }
 }
 
+// 获取今天是否有已批准的请假
+const getLeaveStatus = async () => {
+  try {
+    const response = await axios.get('/api/v1/employee/leave/today-status')
+    if (response.data && response.data.code === 200) {
+      isOnLeave.value = response.data.data === true
+    }
+  } catch (error) {
+    console.warn('获取请假状态失败:', error)
+    isOnLeave.value = false
+  }
+}
+
 // 刷新数据
 const refreshData = async () => {
   await Promise.all([
     getTodaySignData(),
-    getHistoryData()
+    getHistoryData(),
+    getLeaveStatus()
   ])
 }
 
@@ -589,126 +604,187 @@ onUnmounted(() => {
 
 <style scoped>
 .sign-in {
-  padding: 24px;
-  background: linear-gradient(135deg, #f1f1f3 0%, #010137 100%);
-  min-height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 32px;
 }
 
-.header-section {
+/* ============ 顶部门时钟 ============ */
+.clock-section {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.clock-display {
+  display: inline-block;
+}
+
+.clock-time {
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--apple-text);
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 8px;
+  font-feature-settings: "tnum";
+}
+
+.clock-date {
+  font-size: 18px;
+  color: var(--apple-text-secondary);
+  margin-bottom: 4px;
+}
+
+.clock-label {
+  font-size: 14px;
+  color: var(--apple-text-tertiary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ============ 请假提示横幅 ============ */
+.leave-banner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  background: #F3E8FF;
+  color: #6B21A8;
+  padding: 14px 20px;
+  border-radius: var(--apple-radius, 12px);
   margin-bottom: 24px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.title-icon {
-  margin-right: 8px;
-  color: #272728;
-}
-
-.current-time {
-  font-size: 16px;
-  color: #606266;
+  font-size: 15px;
   font-weight: 500;
 }
 
+/* ============ 签到卡片 ============ */
 .sign-cards {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .sign-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.sign-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.sign-card.signed {
-  border-left: 4px solid #171717;
-}
-
-.sign-card.unsigned {
-  border-left: 4px solid #222221;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.card-content {
   margin-bottom: 20px;
 }
 
-.time-info,
-.actual-time,
-.location-info {
+.card-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--apple-text);
+}
+
+.card-state {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 980px;
+}
+
+.state-done {
+  background: #E8F5E9;
+  color: var(--apple-green);
+}
+
+.state-pending {
+  background: #E3F2FD;
+  color: var(--apple-blue);
+}
+
+.state-leave {
+  background: #F3E8FF;
+  color: #9333EA;
+}
+
+/* 卡片信息行 */
+.card-body {
+  flex: 1;
+  margin-bottom: 24px;
+}
+
+.info-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  color: #606266;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--apple-bg-secondary);
 }
 
-.time-icon,
-.actual-icon,
-.location-icon {
-  margin-right: 6px;
-  color: #909399;
+.info-row:last-child {
+  border-bottom: none;
 }
 
-.location-success {
-  color: #67C23A;
+.info-label {
+  font-size: 14px;
+  color: var(--apple-text-secondary);
+}
+
+.info-value {
+  font-size: 14px;
   font-weight: 500;
+  color: var(--apple-text);
 }
 
-.location-error {
-  color: #444343;
-  font-weight: 500;
-}
-
-.card-footer {
-  text-align: center;
-}
-
-.sign-button {
-  width: 100%;
-  height: 44px;
-  font-size: 16px;
+.signed-time {
+  color: var(--apple-green);
   font-weight: 600;
 }
 
+.location-text {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 按钮区域 */
+.card-actions {
+  text-align: center;
+}
+
+.card-actions .apple-btn {
+  width: 100%;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--apple-radius-button);
+  transition: all 0.2s ease;
+}
+
+.btn-signed {
+  background: var(--apple-bg-secondary);
+  color: var(--apple-text-tertiary);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.card-actions .apple-btn-primary {
+  background: var(--apple-blue);
+  color: white;
+}
+
+.card-actions .apple-btn-primary:hover {
+  background: var(--apple-blue-hover);
+}
+
+.card-actions .apple-btn-primary:active {
+  background: var(--apple-blue-active);
+}
+
+/* ============ 历史记录 ============ */
 .history-section {
-  background: rgba(255, 255, 255, 0.95);
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
@@ -718,18 +794,94 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
-.section-header h3 {
+.section-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--apple-text);
+}
+
+/* 精简表格 */
+:deep(.el-table--borderless) {
+  border: none;
+}
+
+:deep(.el-table--borderless::before) {
+  display: none;
+}
+
+:deep(.el-table--borderless th.el-table__cell) {
+  border-bottom: 1px solid var(--apple-bg-secondary);
+  background: transparent;
+  color: var(--apple-text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 8px 0;
+}
+
+:deep(.el-table--borderless .el-table__cell) {
+  border-bottom: 1px solid var(--apple-bg-secondary);
+}
+
+:deep(.el-table--borderless .el-table__row:last-child .el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.el-table--borderless td.el-table__cell) {
+  padding: 12px 0;
+  color: var(--apple-text);
+  font-size: 14px;
+}
+
+.cell-text {
+  color: var(--apple-text);
+  font-size: 14px;
+}
+
+.location-cell {
+  color: var(--apple-text-secondary);
+  font-size: 13px;
+}
+
+/* 类型标记 */
+.type-tag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.type-am {
+  background: #E3F2FD;
+  color: var(--apple-blue);
+}
+
+.type-pm {
+  background: #FFF3E0;
+  color: var(--apple-orange);
+}
+
+/* 状态文字 */
+.state-signed {
+  color: var(--apple-green);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.state-missed {
+  color: var(--apple-text-tertiary);
+  font-size: 13px;
 }
 
 .pagination-container {
   margin-top: 20px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
+/* ============ 对话框 ============ */
 .dialog-content {
   text-align: center;
   padding: 20px 0;
@@ -741,39 +893,39 @@ onUnmounted(() => {
 
 .confirm-text {
   font-size: 18px;
-  color: #303133;
+  color: var(--apple-text);
   margin-bottom: 20px;
 }
 
 .time-display {
-  background: #f5f7fa;
+  background: var(--apple-bg);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--apple-radius);
   margin-bottom: 16px;
 }
 
 .time-display p {
   margin: 8px 0;
-  color: #606266;
+  color: var(--apple-text-secondary);
 }
 
 .status-text.normal-status {
-  color: #67C23A;
+  color: var(--apple-green);
 }
 
 .status-text.late-status {
-  color: #413f3f;
+  color: var(--apple-red);
 }
 
 .status-text.early-status {
-  color: #2f2e2e;
+  color: var(--apple-orange);
 }
 
 .location-section {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--apple-text-tertiary);
   font-size: 14px;
 }
 
@@ -781,20 +933,27 @@ onUnmounted(() => {
   margin-right: 6px;
 }
 
+.location-success {
+  color: var(--apple-green);
+}
+
+.location-error {
+  color: var(--apple-red);
+}
+
 .dialog-footer {
   text-align: center;
 }
 
-:deep(.el-card__body) {
-  padding: 20px;
-}
-
-:deep(.el-table) {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
 :deep(.el-pagination) {
-  margin-top: 20px;
+  --el-pagination-font-size: 13px;
+}
+
+:deep(.el-pagination button:hover) {
+  color: var(--apple-blue);
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  color: var(--apple-blue);
 }
 </style> 
