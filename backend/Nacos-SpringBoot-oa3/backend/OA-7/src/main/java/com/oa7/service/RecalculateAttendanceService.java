@@ -7,6 +7,7 @@ import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.HolidayDao;
 import com.oa7.dao.LeaveDao;
 import com.oa7.pojo.Attendance;
+import com.oa7.pojo.AttendanceRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +38,43 @@ public class RecalculateAttendanceService {
     @Autowired
     private LeaveDao leaveDao;
 
-    /** 默认上班时间 09:00 */
+    @Autowired
+    private AttendanceRuleService attendanceRuleService;
+
+    /** 默认上班时间 09:00（当 AttendanceRule 不可用时回退） */
     private static final LocalTime DEFAULT_START_TIME = LocalTime.of(9, 0);
     /** 默认下班时间 18:00 */
     private static final LocalTime DEFAULT_END_TIME = LocalTime.of(18, 0);
+
+    /**
+     * 获取生效的上班时间 — 优先从 AttendanceRule 读取
+     */
+    private LocalTime getEffectiveStartTime() {
+        try {
+            AttendanceRule rule = attendanceRuleService.getDefaultRule();
+            if (rule != null && rule.getWorkStartTime() != null) {
+                return rule.getWorkStartTime();
+            }
+        } catch (Exception e) {
+            log.debug("读取考勤规则失败，使用默认值", e);
+        }
+        return DEFAULT_START_TIME;
+    }
+
+    /**
+     * 获取生效的下班时间
+     */
+    private LocalTime getEffectiveEndTime() {
+        try {
+            AttendanceRule rule = attendanceRuleService.getDefaultRule();
+            if (rule != null && rule.getWorkEndTime() != null) {
+                return rule.getWorkEndTime();
+            }
+        } catch (Exception e) {
+            log.debug("读取考勤规则失败，使用默认值", e);
+        }
+        return DEFAULT_END_TIME;
+    }
 
     /**
      * 对指定员工+单日进行考勤重算
@@ -119,13 +153,16 @@ public class RecalculateAttendanceService {
             return AttendanceStatus.DAY_OFF;
         }
 
-        // 5. 正常签到签退判断
+        // 5. 正常签到签退判断（使用 AttendanceRule 配置的时间）
         if (att.getCheckInTime() != null && att.getCheckOutTime() != null) {
             LocalTime checkIn = att.getCheckInTime().toLocalTime();
             LocalTime checkOut = att.getCheckOutTime().toLocalTime();
 
-            boolean late = checkIn.isAfter(DEFAULT_START_TIME);
-            boolean early = checkOut.isBefore(DEFAULT_END_TIME);
+            LocalTime effectiveStart = getEffectiveStartTime();
+            LocalTime effectiveEnd = getEffectiveEndTime();
+
+            boolean late = checkIn.isAfter(effectiveStart);
+            boolean early = checkOut.isBefore(effectiveEnd);
 
             if (late && early) return AttendanceStatus.LATE_EARLY;
             if (late) return AttendanceStatus.LATE;

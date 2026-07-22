@@ -26,6 +26,11 @@ public class AttendanceRuleServiceImpl implements AttendanceRuleService {
     }
 
     @Override
+    public AttendanceRule getDefaultRule() {
+        return attendanceRuleDao.selectDefault();
+    }
+
+    @Override
     public RESP getByDept(int deptId) {
         AttendanceRule rule = attendanceRuleDao.selectByDept(deptId);
         if (rule == null) {
