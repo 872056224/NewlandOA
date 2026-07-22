@@ -60,9 +60,9 @@ ai:
     persist-path: ./data/vector-store.json
   llm:
     enabled: true
-    base-url: http://localhost:1234/v1
+    base-url: http://localhost:11434/v1
     api-key: ""
-    model: qwen2.5-7b-instruct-q4_k_m
+    model: qwen2.5:7b
     timeout-ms: 30000
 
 # 日志配置
