@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 考勤记录数据访问层 - day.attendance 表
@@ -66,6 +67,28 @@ public interface AttendanceDao {
      */
     @Select("SELECT COUNT(*) FROM day.attendance WHERE date = #{date} AND today_status = 'NOT_CHECKED_IN'")
     int countAbsenceByDate(@Param("date") LocalDate date);
+
+    // ===== Task 5: Today's Real-time Statistics =====
+
+    /**
+     * 统计某天未签到人数
+     */
+    @Select("SELECT COUNT(*) FROM day.attendance WHERE date=#{date} AND today_status='NOT_CHECKED_IN'")
+    int countNotCheckedInByDate(LocalDate date);
+
+    /**
+     * 按今日状态统计人数
+     */
+    @Select("SELECT COUNT(*) FROM day.attendance WHERE date=#{date} AND today_status=#{status}")
+    int countByTodayStatus(@Param("date") LocalDate date, @Param("status") String status);
+
+    // ===== Task 6: Yesterday's Statistics =====
+
+    /**
+     * 按考勤结算状态分组统计
+     */
+    @Select("SELECT attendance_status, COUNT(*) as cnt FROM day.attendance WHERE date=#{date} GROUP BY attendance_status")
+    List<Map<String, Object>> countGroupByStatus(LocalDate date);
 
     /**
      * 根据员工ID和日期查询考勤记录
