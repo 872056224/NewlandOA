@@ -72,6 +72,10 @@
               <el-icon><PieChart /></el-icon>
               <span>考勤统计</span>
             </el-menu-item>
+            <el-menu-item index="/admin-home/monthly-statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>月度统计</span>
+            </el-menu-item>
             <el-menu-item index="/admin-home/leave-approval">
               <el-icon><Edit /></el-icon>
               <span>请假审批</span>
@@ -114,7 +118,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Odometer, User, OfficeBuilding, Briefcase, Clock,
-  PieChart, ChatDotRound, Edit, Bell, Calendar, Setting
+  PieChart, DataAnalysis, ChatDotRound, Edit, Bell, Calendar, Setting
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 

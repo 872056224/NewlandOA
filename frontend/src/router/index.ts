@@ -138,6 +138,11 @@ const router = createRouter({
           path: 'attendance-rule',
           name: 'AttendanceRule',
           component: () => import('../components/admin/AttendanceRuleManage.vue')
+        },
+        {
+          path: 'monthly-statistics',
+          name: 'MonthlyStatistics',
+          component: () => import('../components/admin/MonthlyStatistics.vue')
         }
       ]
     }
