@@ -1,5 +1,7 @@
 package com.oa7.controller;
 
+import com.oa7.constant.AttendanceStatus;
+import com.oa7.constant.TodayStatus;
 import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.EmpDao;
 import com.oa7.dao.HolidayDao;
@@ -159,6 +161,46 @@ public class StatisticsController {
     }
 
     /**
+     * 当月折线图数据：当月截至今天的各工作日签到人数
+     * 横坐标=工作日日期，纵坐标=签到人数
+     */
+    @GetMapping("/monthly/trend")
+    public RESP monthlyTrend(@RequestParam(required = false) String yearMonth) {
+        if (yearMonth == null || yearMonth.isEmpty()) {
+            yearMonth = YearMonth.now().toString();
+        }
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate monthStart = ym.atDay(1);
+        LocalDate today = LocalDate.now();
+        LocalDate monthEnd = today.isAfter(ym.atEndOfMonth()) ? ym.atEndOfMonth() : today;
+
+        // 该月所有WORKDAY日期
+        List<LocalDate> workdays = holidayDao.selectByDateRange(monthStart, monthEnd).stream()
+                .filter(h -> "WORKDAY".equals(h.getType()))
+                .map(h -> h.getDate())
+                .sorted()
+                .collect(Collectors.toList());
+
+        List<String> dateLabels = new ArrayList<>();
+        List<Integer> signedData = new ArrayList<>();
+
+        for (LocalDate date : workdays) {
+            List<Attendance> records = attendanceDao.selectByDate(date);
+            long signedCount = records.stream()
+                    .filter(a -> a.getCheckInTime() != null)
+                    .count();
+            dateLabels.add(date.toString());
+            signedData.add((int) signedCount);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("dates", dateLabels);
+        result.put("signed", signedData);
+        result.put("yearMonth", yearMonth);
+        return RESP.ok(result);
+    }
+
+    /**
      * 实时计算单个员工的月度考勤统计
      */
     private MonthlyReport computePersonal(int empId, String yearMonthStr) {
@@ -187,32 +229,22 @@ public class StatisticsController {
         int leaveCount = 0, absenceCount = 0, missingCardCount = 0;
 
         for (Attendance record : records) {
-            if (record.getAttendanceStatus() == null) continue;
-            switch (record.getAttendanceStatus().name()) {
-                case "NORMAL":
-                    normalCount++;
-                    break;
-                case "LATE":
-                    lateCount++;
-                    break;
-                case "EARLY":
-                    earlyCount++;
-                    break;
-                case "LATE_EARLY":
-                    lateCount++;
-                    earlyCount++;
-                    break;
-                case "LEAVE":
-                    leaveCount++;
-                    break;
-                case "ABSENCE":
-                    absenceCount++;
-                    break;
-                case "MISSING_CARD":
-                    missingCardCount++;
-                    break;
-                default:
-                    break;
+            if (record.getAttendanceStatus() != null) {
+                switch (record.getAttendanceStatus().name()) {
+                    case "NORMAL": normalCount++; break;
+                    case "LATE": lateCount++; break;
+                    case "EARLY": earlyCount++; break;
+                    case "LATE_EARLY": lateCount++; earlyCount++; break;
+                    case "LEAVE": leaveCount++; break;
+                    case "ABSENCE": absenceCount++; break;
+                    case "MISSING_CARD": missingCardCount++; break;
+                    default: break;
+                }
+            } else if (record.getCheckInTime() != null) {
+                // 未结算但有签到记录 -> 算正常出勤
+                normalCount++;
+            } else if (record.getTodayStatus() == TodayStatus.LEAVE) {
+                leaveCount++;
             }
         }
 

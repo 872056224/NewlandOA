@@ -32,4 +32,9 @@ public interface LeaveDao {
     @Select("SELECT count(*) FROM day.leave WHERE number=#{number} AND status='已批准' " +
             "AND DATE(start_date) <= #{today} AND DATE(end_date) >= #{today}")
     int countApprovedLeaveToday(@Param("number") int number, @Param("today") String today);
+
+    /** 统计某天所有已批准的请假人数 */
+    @Select("SELECT COUNT(DISTINCT number) FROM day.leave WHERE status='已批准' " +
+            "AND DATE(start_date) <= #{date} AND DATE(end_date) >= #{date}")
+    int countApprovedLeaveByDate(@Param("date") String date);
 }

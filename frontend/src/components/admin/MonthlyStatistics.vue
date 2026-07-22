@@ -15,17 +15,15 @@
         <div class="tab-content">
           <!-- Controls Row -->
           <div class="controls-row">
-            <div class="date-range-picker">
-              <span class="control-label">日期范围</span>
+            <div class="control-group">
+              <span class="control-label">月份</span>
               <el-date-picker
-                v-model="overviewDateRange"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                value-format="YYYY-MM-DD"
-                class="apple-input"
-                @change="loadDailyStats"
+                v-model="trendMonth"
+                type="month"
+                placeholder="选择月份"
+                value-format="YYYY-MM"
+                class="apple-input month-picker"
+                @change="loadMonthlyTrend"
               />
             </div>
             <el-button
@@ -41,7 +39,7 @@
           <!-- Chart Card -->
           <el-card class="apple-card chart-card" v-loading="chartLoading" element-loading-text="加载图表中...">
             <template #header>
-              <span class="card-title">近五日签到统计</span>
+              <span class="card-title">{{ trendMonthLabel }} 签到趋势</span>
             </template>
             <div id="overviewChart" ref="chartContainer" class="chart-container"></div>
             <div v-if="!chartLoading && chartEmpty" class="chart-empty">
@@ -174,13 +172,41 @@
             >
               <el-table-column prop="empId" label="员工编号" width="100" />
               <el-table-column prop="empName" label="姓名" width="100" />
-              <el-table-column prop="workDays" label="应出勤天数" width="120" />
-              <el-table-column prop="actualDays" label="实际出勤" width="100" />
-              <el-table-column prop="lateCount" label="迟到" width="80" />
-              <el-table-column prop="earlyCount" label="早退" width="80" />
-              <el-table-column prop="leaveCount" label="请假" width="80" />
-              <el-table-column prop="absenceCount" label="旷工" width="80" />
-              <el-table-column prop="missingCardCount" label="缺卡" width="80" />
+              <el-table-column label="应出勤天数" width="120">
+                <template #default="{ row }">
+                  {{ row.workDays != null ? row.workDays : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="实际出勤" width="100">
+                <template #default="{ row }">
+                  {{ row.actualDays != null ? row.actualDays : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="迟到" width="80">
+                <template #default="{ row }">
+                  {{ row.lateCount != null ? row.lateCount : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="早退" width="80">
+                <template #default="{ row }">
+                  {{ row.earlyCount != null ? row.earlyCount : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="请假" width="80">
+                <template #default="{ row }">
+                  {{ row.leaveCount != null ? row.leaveCount : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="旷工" width="80">
+                <template #default="{ row }">
+                  {{ row.absenceCount != null ? row.absenceCount : '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="缺卡" width="80">
+                <template #default="{ row }">
+                  {{ row.missingCardCount != null ? row.missingCardCount : '--' }}
+                </template>
+              </el-table-column>
               <el-table-column label="出勤率(%)" min-width="110">
                 <template #default="{ row }">
                   <el-tag
@@ -321,7 +347,11 @@ import * as echarts from 'echarts'
 const activeTab = ref('overview')
 
 // Overview tab
-const overviewDateRange = ref<[string, string] | null>(null)
+const trendMonth = ref(formatMonth(new Date()))
+const trendMonthLabel = computed(() => {
+  const [year, month] = trendMonth.value.split('-')
+  return `${year}年${month}月`
+})
 const overviewLoading = ref(false)
 const chartLoading = ref(false)
 const chartEmpty = ref(false)
@@ -394,46 +424,41 @@ function initChart() {
 
   const defaultOption = {
     title: {
-      text: '近五日签到图',
+      text: '',
       textStyle: { color: '#1D1D1F', fontSize: 16 }
     },
     tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' }
-    },
-    legend: {
-      data: ['已签到人数', '未签到人数', '需签到总人数'],
-      textStyle: { color: '#86868B' }
+      trigger: 'axis'
     },
     grid: {
       left: '3%', right: '4%', bottom: '3%', containLabel: true
     },
     xAxis: {
       type: 'category',
-      data: []
+      data: [],
+      axisLabel: { color: '#86868B' }
     },
     yAxis: {
       type: 'value',
-      boundaryGap: [0, 0.01]
+      minInterval: 1,
+      axisLabel: { color: '#86868B' }
     },
     series: [
       {
-        name: '已签到人数',
-        type: 'bar',
+        name: '已签到',
+        type: 'line',
+        smooth: true,
         data: [],
-        itemStyle: { color: '#34C759' }
-      },
-      {
-        name: '未签到人数',
-        type: 'bar',
-        data: [],
-        itemStyle: { color: '#FF9500' }
-      },
-      {
-        name: '需签到总人数',
-        type: 'bar',
-        data: [],
-        itemStyle: { color: '#0071E3' }
+        lineStyle: { color: '#0071E3', width: 2 },
+        itemStyle: { color: '#0071E3' },
+        symbol: 'circle',
+        symbolSize: 6,
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(0, 113, 227, 0.2)' },
+            { offset: 1, color: 'rgba(0, 113, 227, 0.02)' }
+          ])
+        }
       }
     ]
   }
@@ -442,73 +467,32 @@ function initChart() {
   window.addEventListener('resize', () => myChart?.resize())
 }
 
-async function loadChartData() {
+async function loadMonthlyTrend() {
   chartLoading.value = true
   chartEmpty.value = false
   try {
-    const response = await axios.get('/api/v1/admin/attendance/statistics/chart')
-    if (response.data) {
-      const dates = response.data.data || []
-      const signedData = response.data.data1 || []
-      const unsignedData = response.data.data2 || []
-      const totalData = response.data.data3 || []
-
-      if (dates.length === 0) {
+    const response = await axios.get('/api/v1/admin/statistics/monthly/trend', {
+      params: { yearMonth: trendMonth.value }
+    })
+    if (response.data && response.data.data) {
+      const { dates, signed } = response.data.data
+      if (!dates || dates.length === 0) {
         chartEmpty.value = true
         return
       }
-
-      const option = {
+      myChart?.setOption({
         title: {
-          text: '近五日签到图',
-          textStyle: { color: '#1D1D1F', fontSize: 16 }
+          text: `${trendMonthLabel.value} 签到趋势（工作日）`
         },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: { type: 'shadow' }
-        },
-        legend: {
-          data: ['已签到人数', '未签到人数', '需签到总人数'],
-          textStyle: { color: '#86868B' }
-        },
-        grid: {
-          left: '3%', right: '4%', bottom: '3%', containLabel: true
-        },
-        xAxis: {
-          type: 'category',
-          data: dates
-        },
-        yAxis: {
-          type: 'value',
-          boundaryGap: [0, 0.01]
-        },
-        series: [
-          {
-            name: '已签到人数',
-            type: 'bar',
-            data: signedData,
-            itemStyle: { color: '#34C759' }
-          },
-          {
-            name: '未签到人数',
-            type: 'bar',
-            data: unsignedData,
-            itemStyle: { color: '#FF9500' }
-          },
-          {
-            name: '需签到总人数',
-            type: 'bar',
-            data: totalData,
-            itemStyle: { color: '#0071E3' }
-          }
-        ]
-      }
-
-      myChart?.setOption(option)
+        xAxis: { data: dates },
+        series: [{ data: signed }]
+      })
       chartEmpty.value = false
+    } else {
+      chartEmpty.value = true
     }
   } catch (error) {
-    console.error('加载图表数据失败:', error)
+    console.error('加载趋势图数据失败:', error)
     chartEmpty.value = true
   } finally {
     chartLoading.value = false
@@ -527,17 +511,8 @@ async function loadDailyStats() {
       }
     })
     if (response.data && response.data.data) {
-      let stats = response.data.data || []
+      dailyStats.value = response.data.data || []
       dailyTotal.value = response.data.total || 0
-
-      // Filter by date range if set
-      if (overviewDateRange.value && overviewDateRange.value[0] && overviewDateRange.value[1]) {
-        const start = overviewDateRange.value[0]
-        const end = overviewDateRange.value[1]
-        stats = stats.filter((s: any) => s.date >= start && s.date <= end)
-      }
-
-      dailyStats.value = stats
     } else {
       dailyStats.value = []
       dailyTotal.value = 0
@@ -637,7 +612,7 @@ async function generateMonthlyReport() {
 
 function onEmpSelectChange(val: number | null) {
   if (val != null) {
-    // Auto-load when employee selected
+    loadMonthlyStats()
   }
 }
 
@@ -678,7 +653,7 @@ async function loadDeptStats() {
 
 async function refreshOverview() {
   overviewLoading.value = true
-  await Promise.all([loadChartData(), loadDailyStats()])
+  await Promise.all([loadMonthlyTrend(), loadDailyStats()])
   overviewLoading.value = false
 }
 
@@ -687,7 +662,7 @@ async function refreshOverview() {
 onMounted(async () => {
   await nextTick()
   initChart()
-  loadChartData()
+  loadMonthlyTrend()
   loadDailyStats()
   loadEmployees()
   loadDepartments()
