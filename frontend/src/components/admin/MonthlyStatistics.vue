@@ -10,7 +10,23 @@
 
     <!-- Tabs -->
     <el-tabs v-model="activeTab" type="card" class="stats-tabs">
-      <!-- ─── Tab 1: 概览 ─── -->
+      <!-- ─── Tab 1: 近期统计（旧考勤统计的柱状图） ─── -->
+      <el-tab-pane label="近期统计" name="recent">
+        <div class="tab-content">
+          <el-card class="apple-card" v-loading="barLoading">
+            <template #header>
+              <span class="card-title">近期统计（近4工作日）</span>
+            </template>
+            <div id="recentBarChart" ref="recentChartContainer" style="width:100%;height:400px"></div>
+            <div v-if="!barLoading && barEmpty" class="chart-empty">
+              <el-icon class="empty-icon"><DocumentRemove /></el-icon>
+              <p>暂无数据</p>
+            </div>
+          </el-card>
+        </div>
+      </el-tab-pane>
+
+      <!-- ─── Tab 2: 概览（签到趋势 + 明细） ─── -->
       <el-tab-pane label="概览" name="overview">
         <div class="tab-content">
           <!-- Controls Row -->
@@ -36,32 +52,17 @@
             </el-button>
           </div>
 
-          <!-- Two-column charts -->
-          <div class="charts-row">
-            <!-- Left: 近期统计 (bar chart) -->
-            <el-card class="apple-card chart-card-left">
-              <template #header>
-                <span class="card-title">近期统计（近4工作日）</span>
-              </template>
-              <div id="recentBarChart" class="chart-container-sm"></div>
-              <div v-if="barEmpty" class="chart-empty">
-                <el-icon class="empty-icon"><DocumentRemove /></el-icon>
-                <p>暂无数据</p>
-              </div>
-            </el-card>
-
-            <!-- Right: 当月签到趋势 (line chart) -->
-            <el-card class="apple-card chart-card-right" v-loading="chartLoading" element-loading-text="加载图表中...">
-              <template #header>
-                <span class="card-title">{{ trendMonthLabel }} 签到趋势</span>
-              </template>
-              <div id="overviewChart" ref="chartContainer" class="chart-container-sm"></div>
-              <div v-if="!chartLoading && chartEmpty" class="chart-empty">
-                <el-icon class="empty-icon"><DocumentRemove /></el-icon>
-                <p>暂无图表数据</p>
-              </div>
-            </el-card>
-          </div>
+          <!-- Line Chart -->
+          <el-card class="apple-card" v-loading="chartLoading" element-loading-text="加载图表中...">
+            <template #header>
+              <span class="card-title">{{ trendMonthLabel }} 签到趋势</span>
+            </template>
+            <div id="overviewChart" ref="chartContainer" style="width:100%;height:400px"></div>
+            <div v-if="!chartLoading && chartEmpty" class="chart-empty">
+              <el-icon class="empty-icon"><DocumentRemove /></el-icon>
+              <p>暂无图表数据</p>
+            </div>
+          </el-card>
 
           <!-- Daily Stats Table -->
           <el-card class="apple-card table-card">
@@ -349,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   DataAnalysis, Refresh, Search, Files, InfoFilled, DocumentRemove
@@ -359,7 +360,7 @@ import * as echarts from 'echarts'
 
 // ─── Reactive State ───
 
-const activeTab = ref('overview')
+const activeTab = ref('recent')
 
 // Overview tab
 const trendMonth = ref(formatMonth(new Date()))
@@ -739,6 +740,15 @@ onMounted(async () => {
   loadEmployees()
   loadDepartments()
 })
+
+// 切换标签页时初始化对应图表
+import { watch } from 'vue'
+watch(activeTab, (tab) => {
+  nextTick(() => {
+    if (tab === 'recent' && barChart) { barChart.resize() }
+    if (tab === 'overview' && myChart) { myChart.resize() }
+  })
+})
 </script>
 
 <style scoped>
@@ -985,25 +995,6 @@ onMounted(async () => {
 
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
   background-color: var(--apple-bg);
-}
-
-/* ─── Charts row ─── */
-.charts-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.chart-card-left,
-.chart-card-right {
-  flex: 1;
-  min-width: 0;
-}
-.chart-container-sm {
-  width: 100%;
-  height: 300px;
-}
-@media (max-width: 900px) {
-  .charts-row { flex-direction: column; }
 }
 
 /* ─── Responsive ─── */
