@@ -7,4 +7,5 @@ public interface LeaveService {
     RESP getByStatus(String status, int currentPage, int pageSize);
     RESP approve(String id);
     RESP reject(String id);
+    RESP revoke(String id);
 }

@@ -28,4 +28,9 @@ public class RetroactiveSignController {
     public RESP reject(@PathVariable int id) {
         return retroactiveSignService.reject(id);
     }
+
+    @PutMapping("/{id}/revoke")
+    public RESP revoke(@PathVariable int id) {
+        return retroactiveSignService.revoke(id);
+    }
 }

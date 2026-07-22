@@ -6,4 +6,5 @@ public interface MakeupRequestService {
     RESP getPending(int currentPage, int pageSize);
     RESP approve(int id);
     RESP reject(int id);
+    RESP revoke(int id);
 }

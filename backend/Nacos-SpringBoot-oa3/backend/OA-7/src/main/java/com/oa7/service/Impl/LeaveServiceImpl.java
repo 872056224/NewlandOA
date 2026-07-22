@@ -113,4 +113,40 @@ public class LeaveServiceImpl implements LeaveService {
 
         return RESP.ok("操作成功");
     }
+
+    @Override
+    public RESP revoke(String id) {
+        Leave leave = leaveDao.selectById(id);
+        if (leave == null) return RESP.error("请假单不存在");
+        if (!"已批准".equals(leave.getStatus())) {
+            return RESP.error("该申请已被他人处理，当前状态：" + leave.getStatus());
+        }
+
+        // 乐观锁更新
+        int ret = leaveDao.updateStatusWithVersion(id, "待审批", leave.getVersion());
+        if (ret == 0) {
+            return RESP.error("该申请已被他人处理，请刷新后重试");
+        }
+
+        // 通知员工本人
+        notificationDao.insert("leave_revoked", "请假已撤销",
+                "您的" + leave.getType() + "申请已被撤销（" + leave.getStart_date() + " ~ " + leave.getEnd_date() + "）",
+                leave.getNumber(), id);
+
+        // 将该请假单的所有管理员通知标记为已读
+        notificationDao.markAllReadByBizId(id);
+
+        // 考勤重算：清除请假日期范围内 today_status 为 LEAVE 的记录，然后重新计算
+        LocalDate startDate = LocalDate.parse(leave.getStart_date().substring(0, 10));
+        LocalDate endDate = LocalDate.parse(leave.getEnd_date().substring(0, 10));
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            Attendance att = attendanceDao.selectByEmpAndDate(leave.getNumber(), date);
+            if (att != null && att.getTodayStatus() == TodayStatus.LEAVE) {
+                attendanceDao.updateTodayStatusByEmpAndDate(leave.getNumber(), date, TodayStatus.NOT_CHECKED_IN);
+            }
+        }
+        recalculateAttendanceService.recalculate(leave.getNumber(), startDate, endDate);
+
+        return RESP.ok("操作成功");
+    }
 }

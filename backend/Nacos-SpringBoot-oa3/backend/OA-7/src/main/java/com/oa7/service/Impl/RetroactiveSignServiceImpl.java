@@ -129,4 +129,51 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
         return RESP.ok("操作成功");
     }
+
+    @Override
+    public RESP revoke(int id) {
+        RetroactiveSign sign = retroactiveSignDao.selectById(id);
+        if (sign == null) return RESP.error("补签申请不存在");
+        if (!"已批准".equals(sign.getStatus())) {
+            return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
+        }
+
+        // 乐观锁更新
+        int ret = retroactiveSignDao.updateStatusWithVersion(id, "待审批", sign.getVersion());
+        if (ret == 0) {
+            return RESP.error("该申请已被他人处理，请刷新后重试");
+        }
+
+        sign = retroactiveSignDao.selectById(id);
+        if (sign != null) {
+            // 清除之前设置的签到/签退时间
+            try {
+                LocalDate signDate = LocalDate.parse(sign.getSign_date());
+                Integer empId = sign.getNumber();
+
+                Attendance attendance = attendanceDao.selectByEmpAndDate(empId, signDate);
+                if (attendance != null) {
+                    if ("a".equals(sign.getType())) {
+                        attendance.setCheckInTime(null);
+                    } else if ("p".equals(sign.getType())) {
+                        attendance.setCheckOutTime(null);
+                    }
+                    attendanceDao.updateCheckTime(attendance);
+                    recalculateAttendanceService.recalculate(empId, signDate);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            String typeLabel = sign.getType().equals("a") ? "上午" : "下午";
+            notificationDao.insert("retroactive_revoked", "补签已撤销",
+                    "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已被撤销",
+                    sign.getNumber(), String.valueOf(id));
+
+            // 将该补签单的所有管理员通知标记为已读
+            notificationDao.markAllReadByBizId(String.valueOf(id));
+        }
+
+        return RESP.ok("操作成功");
+    }
 }

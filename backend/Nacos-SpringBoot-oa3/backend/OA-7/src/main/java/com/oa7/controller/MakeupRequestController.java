@@ -28,4 +28,9 @@ public class MakeupRequestController {
     public RESP reject(@PathVariable int id) {
         return makeupRequestService.reject(id);
     }
+
+    @PutMapping("/{id}/revoke")
+    public RESP revoke(@PathVariable int id) {
+        return makeupRequestService.revoke(id);
+    }
 }

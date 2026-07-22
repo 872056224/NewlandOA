@@ -35,4 +35,9 @@ public class LeaveController {
     public RESP reject(@PathVariable String id) {
         return leaveService.reject(id);
     }
+
+    @PutMapping("/{id}/revoke")
+    public RESP revoke(@PathVariable String id) {
+        return leaveService.revoke(id);
+    }
 }

@@ -120,4 +120,46 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
 
         return RESP.ok("操作成功");
     }
+
+    @Override
+    public RESP revoke(int id) {
+        MakeupRequest request = makeupRequestDao.selectById(id);
+        if (request == null) return RESP.error("补卡申请不存在");
+        if (!"APPROVED".equals(request.getStatus())) {
+            return RESP.error("该申请已被他人处理，当前状态：" + request.getStatus());
+        }
+
+        // 乐观锁更新
+        int ret = makeupRequestDao.updateStatusWithVersion(id, "PENDING", request.getVersion());
+        if (ret == 0) {
+            return RESP.error("该申请已被他人处理，请刷新后重试");
+        }
+
+        // 清除之前设置的签到/签退时间
+        LocalDate date = LocalDate.parse(request.getDate());
+        String type = request.getType();
+        Integer empId = request.getEmpId();
+
+        Attendance attendance = attendanceDao.selectByEmpAndDate(empId, date);
+        if (attendance != null) {
+            if ("CHECK_IN".equals(type)) {
+                attendance.setCheckInTime(null);
+            } else if ("CHECK_OUT".equals(type)) {
+                attendance.setCheckOutTime(null);
+            }
+            attendanceDao.updateCheckTime(attendance);
+            recalculateAttendanceService.recalculate(empId, date);
+        }
+
+        // 通知员工
+        String typeLabel = "CHECK_IN".equals(type) ? "上班卡" : "下班卡";
+        notificationDao.insert("makeup_revoked", "补卡已撤销",
+                "您在 " + request.getDate() + " 的" + typeLabel + "补卡申请已被撤销",
+                empId, String.valueOf(id));
+
+        // 将所有管理员通知标记为已读
+        notificationDao.markAllReadByBizId(String.valueOf(id));
+
+        return RESP.ok("操作成功");
+    }
 }
