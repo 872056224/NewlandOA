@@ -136,4 +136,15 @@ public interface AttendanceDao {
             "ON DUPLICATE KEY UPDATE today_status=VALUES(today_status)",
             "</script>"})
     int batchInsertOrUpdate(@Param("list") List<Attendance> list);
+
+    // ===== Monthly Report: Employee attendance within date range =====
+
+    /**
+     * 查询指定员工在指定日期范围内的考勤记录
+     */
+    @Select("SELECT * FROM day.attendance WHERE emp_id = #{empId} AND date BETWEEN #{start} AND #{end} ORDER BY date")
+    @ResultMap("attendanceResult")
+    List<Attendance> selectByEmpAndDateRange(@Param("empId") int empId,
+                                              @Param("start") LocalDate start,
+                                              @Param("end") LocalDate end);
 }
