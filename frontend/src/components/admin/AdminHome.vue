@@ -68,13 +68,9 @@
               <el-icon><Clock /></el-icon>
               <span>考勤管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin-home/sign-statistics">
-              <el-icon><PieChart /></el-icon>
-              <span>考勤统计</span>
-            </el-menu-item>
             <el-menu-item index="/admin-home/monthly-statistics">
               <el-icon><DataAnalysis /></el-icon>
-              <span>月度统计</span>
+              <span>考勤统计</span>
             </el-menu-item>
             <el-menu-item index="/admin-home/leave-approval">
               <el-icon><Edit /></el-icon>

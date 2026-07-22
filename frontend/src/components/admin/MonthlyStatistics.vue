@@ -36,17 +36,32 @@
             </el-button>
           </div>
 
-          <!-- Chart Card -->
-          <el-card class="apple-card chart-card" v-loading="chartLoading" element-loading-text="加载图表中...">
-            <template #header>
-              <span class="card-title">{{ trendMonthLabel }} 签到趋势</span>
-            </template>
-            <div id="overviewChart" ref="chartContainer" class="chart-container"></div>
-            <div v-if="!chartLoading && chartEmpty" class="chart-empty">
-              <el-icon class="empty-icon"><DocumentRemove /></el-icon>
-              <p>暂无图表数据</p>
-            </div>
-          </el-card>
+          <!-- Two-column charts -->
+          <div class="charts-row">
+            <!-- Left: 近期统计 (bar chart) -->
+            <el-card class="apple-card chart-card-left">
+              <template #header>
+                <span class="card-title">近期统计（近4工作日）</span>
+              </template>
+              <div id="recentBarChart" class="chart-container-sm"></div>
+              <div v-if="barEmpty" class="chart-empty">
+                <el-icon class="empty-icon"><DocumentRemove /></el-icon>
+                <p>暂无数据</p>
+              </div>
+            </el-card>
+
+            <!-- Right: 当月签到趋势 (line chart) -->
+            <el-card class="apple-card chart-card-right" v-loading="chartLoading" element-loading-text="加载图表中...">
+              <template #header>
+                <span class="card-title">{{ trendMonthLabel }} 签到趋势</span>
+              </template>
+              <div id="overviewChart" ref="chartContainer" class="chart-container-sm"></div>
+              <div v-if="!chartLoading && chartEmpty" class="chart-empty">
+                <el-icon class="empty-icon"><DocumentRemove /></el-icon>
+                <p>暂无图表数据</p>
+              </div>
+            </el-card>
+          </div>
 
           <!-- Daily Stats Table -->
           <el-card class="apple-card table-card">
@@ -358,6 +373,12 @@ const chartEmpty = ref(false)
 const chartContainer = ref<HTMLElement>()
 let myChart: echarts.ECharts | null = null
 
+// Recent bar chart (left side)
+const recentChartContainer = ref<HTMLElement>()
+let barChart: echarts.ECharts | null = null
+const barLoading = ref(false)
+const barEmpty = ref(false)
+
 const dailyStats = ref<any[]>([])
 const dailyStatsLoading = ref(false)
 const dailyTotal = ref(0)
@@ -496,6 +517,55 @@ async function loadMonthlyTrend() {
     chartEmpty.value = true
   } finally {
     chartLoading.value = false
+  }
+}
+
+// ─── Recent Bar Chart (近期统计) ───
+
+function initBarChart() {
+  if (!recentChartContainer.value) return
+  barChart = echarts.init(recentChartContainer.value)
+  const option = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { data: ['已签到', '未签到', '请假'], textStyle: { color: '#86868B' } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', data: [], axisLabel: { color: '#86868B' } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { color: '#86868B' } },
+    series: [
+      { name: '已签到', type: 'bar', data: [], itemStyle: { color: '#34C759' } },
+      { name: '未签到', type: 'bar', data: [], itemStyle: { color: '#FF9500' } },
+      { name: '请假', type: 'bar', data: [], itemStyle: { color: '#AF52DE' } }
+    ]
+  }
+  barChart.setOption(option)
+  window.addEventListener('resize', () => barChart?.resize())
+}
+
+async function loadRecentStats() {
+  barLoading.value = true
+  barEmpty.value = false
+  try {
+    const response = await axios.get('/api/v1/admin/attendance/statistics/chart')
+    if (response.data) {
+      const dates = response.data.data || []
+      const signed = response.data.data1 || []
+      const unsigned = response.data.data2 || []
+      const leave = response.data.data3 || []
+      if (!dates.length) { barEmpty.value = true; return }
+      barChart?.setOption({
+        xAxis: { data: dates },
+        series: [
+          { data: signed },
+          { data: unsigned },
+          { data: leave }
+        ]
+      })
+    }
+  } catch (error) {
+    console.error('加载近期统计失败:', error)
+    barEmpty.value = true
+  } finally {
+    barLoading.value = false
   }
 }
 
@@ -653,7 +723,7 @@ async function loadDeptStats() {
 
 async function refreshOverview() {
   overviewLoading.value = true
-  await Promise.all([loadMonthlyTrend(), loadDailyStats()])
+  await Promise.all([loadMonthlyTrend(), loadRecentStats(), loadDailyStats()])
   overviewLoading.value = false
 }
 
@@ -662,7 +732,9 @@ async function refreshOverview() {
 onMounted(async () => {
   await nextTick()
   initChart()
+  initBarChart()
   loadMonthlyTrend()
+  loadRecentStats()
   loadDailyStats()
   loadEmployees()
   loadDepartments()
@@ -913,6 +985,25 @@ onMounted(async () => {
 
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
   background-color: var(--apple-bg);
+}
+
+/* ─── Charts row ─── */
+.charts-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.chart-card-left,
+.chart-card-right {
+  flex: 1;
+  min-width: 0;
+}
+.chart-container-sm {
+  width: 100%;
+  height: 300px;
+}
+@media (max-width: 900px) {
+  .charts-row { flex-direction: column; }
 }
 
 /* ─── Responsive ─── */

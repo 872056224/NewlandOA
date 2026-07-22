@@ -58,8 +58,13 @@ public class StatisticsController {
             yearMonth = YearMonth.now().minusMonths(1).toString();
         }
 
-        // 优先从 monthly_report 表读取
-        MonthlyReport report = monthlyReportDao.selectByEmpAndMonth(empId, yearMonth);
+        // 优先从 monthly_report 表读取（当月数据实时计算，避免脏缓存）
+        YearMonth ym = YearMonth.parse(yearMonth);
+        boolean isCurrentMonth = ym.equals(YearMonth.from(LocalDate.now()));
+        MonthlyReport report = null;
+        if (!isCurrentMonth) {
+            report = monthlyReportDao.selectByEmpAndMonth(empId, yearMonth);
+        }
         if (report != null) {
             return RESP.ok(report);
         }
@@ -207,23 +212,28 @@ public class StatisticsController {
         YearMonth yearMonth = YearMonth.parse(yearMonthStr);
         LocalDate monthStart = yearMonth.atDay(1);
         LocalDate monthEnd = yearMonth.atEndOfMonth();
+        LocalDate today = LocalDate.now();
+
+        // 如果是当月，只统计到今天为止（出勤率应基于已过天数）
+        boolean isCurrentMonth = yearMonth.equals(YearMonth.from(today));
+        LocalDate effectiveEnd = isCurrentMonth ? today : monthEnd;
 
         Emp emp = empDao.selectByEmpNumber(empId);
         if (emp == null) {
             return null;
         }
 
-        // 查询WORKDAY天数
-        List<Holiday> holidays = holidayDao.selectByDateRange(monthStart, monthEnd);
+        // 查询截至 effectiveEnd 的 WORKDAY 天数
+        List<Holiday> holidays = holidayDao.selectByDateRange(monthStart, effectiveEnd);
         int workDays = (int) holidays.stream()
                 .filter(h -> "WORKDAY".equals(h.getType()))
                 .count();
         if (workDays == 0) {
-            workDays = countWeekdays(yearMonth);
+            workDays = countWeekdays(monthStart, effectiveEnd);
         }
 
-        // 查询考勤记录
-        List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, monthStart, monthEnd);
+        // 查询考勤记录（到有效截止日）
+        List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, monthStart, effectiveEnd);
 
         int normalCount = 0, lateCount = 0, earlyCount = 0;
         int leaveCount = 0, absenceCount = 0, missingCardCount = 0;
@@ -275,12 +285,11 @@ public class StatisticsController {
     }
 
     /**
-     * 计算自然月中的工作日天数（周一到周五）
+     * 计算日期范围内的周一到周五天数
      */
-    private int countWeekdays(YearMonth yearMonth) {
+    private int countWeekdays(LocalDate start, LocalDate end) {
         int count = 0;
-        LocalDate date = yearMonth.atDay(1);
-        LocalDate end = yearMonth.atEndOfMonth();
+        LocalDate date = start;
         while (!date.isAfter(end)) {
             if (date.getDayOfWeek().getValue() <= 5) {
                 count++;
