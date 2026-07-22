@@ -3,7 +3,10 @@ package com.oa2.constant;
 /**
  * 最终状态 — 用于统计、报表、工资计算
  * 优先级（高→低）：
- * HOLIDAY > REST_DAY > LEAVE > DAY_OFF > BUSINESS_TRIP > FIELD_WORK > NORMAL > LATE > EARLY > MISSING_CARD > ABSENCE
+ * HOLIDAY > REST_DAY > LEAVE > DAY_OFF
+ * > NORMAL > LATE > EARLY > LATE_EARLY > MISSING_CARD > ABSENCE
+ *
+ * BUSINESS_TRIP 和 FIELD_WORK 将在 Phase 5 实现
  */
 public enum AttendanceStatus {
     NORMAL("正常"),

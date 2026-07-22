@@ -334,7 +334,7 @@ const getSignTypeText = (type: string): string => {
 
 // 获取标准时间
 const getStandardTime = (type: string): string => {
-  return type === 'a' ? '08:30' : '17:30'
+  return type === 'a' ? '09:00' : '18:00'
 }
 
 // 获取状态文本
@@ -389,8 +389,8 @@ const getTimingStatus = (): string => {
   const currentTimeNum = currentHour * 60 + currentMinute
   
   if (signInfo.type === 'a') {
-    // 上班签到：8:30之前正常，之后迟到
-    const standardTime = 8 * 60 + 30 // 8:30
+    // 上班签到：09:00之前正常，之后迟到
+    const standardTime = 9 * 60 + 0 // 9:00
     if (currentTimeNum <= standardTime) {
       return '正常'
     } else {
@@ -398,8 +398,8 @@ const getTimingStatus = (): string => {
       return `迟到 ${Math.floor(lateMinutes / 60)}小时${lateMinutes % 60}分钟`
     }
   } else {
-    // 下班签退：17:30之前早退，之后正常
-    const standardTime = 17 * 60 + 30 // 17:30
+    // 下班签退：18:00之前早退，之后正常
+    const standardTime = 18 * 60 + 0 // 18:00
     if (currentTimeNum >= standardTime) {
       return '正常'
     } else {
@@ -433,7 +433,7 @@ const getTodaySignData = async () => {
       // 上班卡（签到）
       const morningRecord = {
         type: 'a',
-        signDate: d.checkInTime || `${today} 08:30:00`,
+        signDate: d.checkInTime || `${today} 09:00:00`,
         state: hasCheckedIn ? '已签到' : '未签到',
         number: 0,
         name: '',
@@ -444,7 +444,7 @@ const getTodaySignData = async () => {
       // 下班卡（签退），只有已签到才启用
       const eveningRecord = {
         type: 'p',
-        signDate: d.checkOutTime || `${today} 17:30:00`,
+        signDate: d.checkOutTime || `${today} 18:00:00`,
         state: status === 'CHECKED_OUT' ? '已签到' : (hasCheckedIn ? '未签到' : '--'),
         disabled: !hasCheckedIn,
         number: 0,

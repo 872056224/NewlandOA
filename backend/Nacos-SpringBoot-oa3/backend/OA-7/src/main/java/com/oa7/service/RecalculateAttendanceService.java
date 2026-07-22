@@ -138,12 +138,13 @@ public class RecalculateAttendanceService {
             return AttendanceStatus.MISSING_CARD;
         }
 
-        // 7. 仅签退（未签到）→ 旷工
+        // 7. 仅签退（未签到）→ 缺卡（与仅签到未签退同属 MISSING_CARD）
         if (att.getCheckInTime() == null && att.getCheckOutTime() != null) {
-            return AttendanceStatus.ABSENCE;
+            return AttendanceStatus.MISSING_CARD;
         }
 
-        // 8. 未签到 → 旷工
+        // 8. 未签到 && 未签退 → 旷工
+        // TODO Phase 2: 增加待审批补卡/补签检查（如有待审批申请则不应标记为旷工）
         return AttendanceStatus.ABSENCE;
     }
 

@@ -22,10 +22,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Autowired
     private AttendanceDao attendanceDao;
 
-    /** 上班标准时间 08:30 */
-    private static final LocalTime STANDARD_IN = LocalTime.of(8, 30);
-    /** 下班标准时间 17:30 */
-    private static final LocalTime STANDARD_OUT = LocalTime.of(17, 30);
+    /** 上班标准时间 09:00 */
+    private static final LocalTime STANDARD_IN = LocalTime.of(9, 0);
+    /** 下班标准时间 18:00 */
+    private static final LocalTime STANDARD_OUT = LocalTime.of(18, 0);
 
     @Override
     public RESP checkIn(int empId, String coordinates, String clientIp) {
