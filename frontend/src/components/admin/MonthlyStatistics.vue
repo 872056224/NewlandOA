@@ -65,13 +65,20 @@
               style="width: 100%"
               empty-text="暂无数据"
             >
-              <el-table-column prop="date" label="日期" width="140" />
-              <el-table-column prop="Yc" label="已签到" width="120" />
-              <el-table-column prop="Nc" label="未签到" width="120" />
-              <el-table-column label="签到率" min-width="120">
+              <el-table-column prop="date" label="日期" width="120" />
+              <el-table-column prop="totalEmployees" label="总人数" width="70" align="center" />
+              <el-table-column prop="onLeave" label="请假" width="70" align="center" />
+              <el-table-column label="应签到" width="80" align="center">
                 <template #default="{ row }">
-                  <span :class="rateClass(row.Yc, row.Nc)">
-                    {{ calcRate(row.Yc, row.Nc) }}%
+                  {{ row.totalEmployees - row.onLeave }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="signed" label="已签到" width="70" align="center" />
+              <el-table-column prop="unsigned" label="未签到" width="70" align="center" />
+              <el-table-column label="签到率" min-width="100" align="center">
+                <template #default="{ row }">
+                  <span :class="rateClass2(row.signed, row.totalEmployees - row.onLeave)">
+                    {{ calcRate2(row.signed, row.totalEmployees - row.onLeave) }}%
                   </span>
                 </template>
               </el-table-column>
@@ -350,16 +357,16 @@ function formatMonth(date: Date): string {
   return `${y}-${m}`
 }
 
-function calcRate(signed: number, unsigned: number): string {
-  const total = signed + unsigned
-  if (total === 0) return '0.00'
-  return ((signed / total) * 100).toFixed(2)
+function calcRate2(signed: number, expected: number): string {
+  if (expected <= 0) return '0.00'
+  return ((signed / expected) * 100).toFixed(2)
 }
 
-function rateClass(signed: number, unsigned: number): string {
-  const rate = parseFloat(calcRate(signed, unsigned))
-  if (rate >= 80) return 'rate-high'
-  if (rate >= 50) return 'rate-mid'
+function rateClass2(signed: number, expected: number): string {
+  if (expected <= 0) return 'rate-low'
+  const rate = parseFloat(calcRate2(signed, expected))
+  if (rate >= 90) return 'rate-high'
+  if (rate >= 70) return 'rate-mid'
   return 'rate-low'
 }
 

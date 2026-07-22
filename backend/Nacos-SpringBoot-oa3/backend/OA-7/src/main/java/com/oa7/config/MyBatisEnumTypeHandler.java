@@ -2,7 +2,6 @@ package com.oa7.config;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
-import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
@@ -11,8 +10,8 @@ import java.sql.SQLException;
 
 /**
  * MyBatis TypeHandler for enums stored as VARCHAR (using enum.name())
+ * Note: Only used via explicit typeHandler= in @Results annotations (not auto-discovered)
  */
-@MappedTypes(Enum.class)
 public class MyBatisEnumTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E> {
 
     private final Class<E> type;

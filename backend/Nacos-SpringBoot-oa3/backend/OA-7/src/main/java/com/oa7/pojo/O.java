@@ -12,7 +12,8 @@ import lombok.Data;
 public class O {
 
     private String date;
-    private int Yc;
-    private int Nc;
-    private int Ne;
+    private int totalEmployees;
+    private int onLeave;
+    private int signed;
+    private int unsigned;
 }

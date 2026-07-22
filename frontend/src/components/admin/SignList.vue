@@ -1,7 +1,7 @@
 <template>
   <div class="apple-page">
-    <b class="apple-title" style="margin-bottom: 20px; display: block;">签到时间列表</b>
-    
+    <b class="apple-title" style="margin-bottom: 20px; display: block;">考勤统计（仅工作日）</b>
+
     <!-- 数据展现表格 -->
     <el-table
       :data="tableData"
@@ -11,15 +11,26 @@
       header-cell-class-name="apple-table-header"
       class="el-table--borderless"
     >
-      <el-table-column 
-        label="签到日期" 
-        prop="date" 
-        min-width="180" 
-        align="center" 
-      />
-      <el-table-column label="操作" min-width="200" align="center">
+      <el-table-column label="日期" prop="date" min-width="120" align="center" />
+      <el-table-column label="总人数" prop="totalEmployees" min-width="80" align="center" />
+      <el-table-column label="请假人数" prop="onLeave" min-width="90" align="center" />
+      <el-table-column label="应签到" min-width="90" align="center">
         <template #default="{ row }">
-          <el-button @click="showHistory(row)" type="warning">查看详细信息</el-button>
+          {{ row.totalEmployees - row.onLeave }}
+        </template>
+      </el-table-column>
+      <el-table-column label="已签到" prop="signed" min-width="80" align="center" />
+      <el-table-column label="未签到" prop="unsigned" min-width="80" align="center" />
+      <el-table-column label="出勤率" min-width="100" align="center">
+        <template #default="{ row }">
+          <span :style="rateStyle(row)">
+            {{ computeRate(row) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" min-width="140" align="center">
+        <template #default="{ row }">
+          <el-button @click="showHistory(row)" type="warning" size="small">查看详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -37,87 +48,42 @@
       background="false"
     />
 
-    <!-- 查看具体签到信息对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      title="查看具体签到信息" 
-      width="550px"
+    <!-- 详情对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="考勤详情"
+      width="500px"
       @close="resetForm"
     >
-      <el-form 
-        :label-position="'right'" 
-        :model="editFormData" 
-        class="demo-ruleForm" 
+      <el-form
+        :label-position="'right'"
+        :model="detailData"
+        class="demo-ruleForm"
         label-width="120px"
         ref="editFormRef"
         v-loading="detailLoading"
       >
-        <el-form-item label="查看的日期：" prop="signDate">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.signDate"
-          />
+        <el-form-item label="日期：">
+          <el-input :disabled="true" v-model="detailData.date" style="width: 200px;" />
         </el-form-item>
-        
-        <el-divider content-position="left">上班签到统计</el-divider>
-        <el-form-item label="已签到人数：" prop="morningSignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.morningSignedCount"
-          />
-          <el-button @click="showSignCount('a')" class="apple-btn" style="margin-left: 10px;">
-            查看详情
-          </el-button>
+        <el-divider content-position="left">考勤统计</el-divider>
+        <el-form-item label="总人数：">
+          <el-input :disabled="true" v-model="detailData.totalEmployees" style="width: 100px;" />
         </el-form-item>
-        <el-form-item label="未签到人数：" prop="morningUnsignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.morningUnsignedCount"
-          />
-          <el-button @click="showNoSignCount('a')" class="apple-btn" style="margin-left: 10px;">
-            查看详情
-          </el-button>
+        <el-form-item label="请假人数：">
+          <el-input :disabled="true" v-model="detailData.onLeave" style="width: 100px;" />
         </el-form-item>
-        
-        <el-divider content-position="left">下班签退统计</el-divider>
-        <el-form-item label="已签退人数：" prop="eveningSignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.eveningSignedCount"
-          />
-          <el-button @click="showSignCount('p')" class="apple-btn" style="margin-left: 10px;">
-            查看详情
-          </el-button>
+        <el-form-item label="应签到：">
+          <el-input :disabled="true" v-model="detailData.expected" style="width: 100px;" />
         </el-form-item>
-        <el-form-item label="未签退人数：" prop="eveningUnsignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.eveningUnsignedCount"
-          />
-          <el-button @click="showNoSignCount('p')" class="apple-btn" style="margin-left: 10px;">
-            查看详情
-          </el-button>
+        <el-form-item label="已签到：">
+          <el-input :disabled="true" v-model="detailData.signed" style="width: 100px;" />
         </el-form-item>
-        
-        <el-divider content-position="left">总计</el-divider>
-        <el-form-item label="总签到人次：" prop="totalSignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.totalSignedCount"
-          />
+        <el-form-item label="未签到：">
+          <el-input :disabled="true" v-model="detailData.unsigned" style="width: 100px;" />
         </el-form-item>
-        <el-form-item label="总未签到人次：" prop="totalUnsignedCount">
-          <el-input 
-            :disabled="true" 
-            style="background-color: white; width: 150px;"
-            v-model="editFormData.totalUnsignedCount"
-          />
+        <el-form-item label="出勤率：">
+          <el-input :disabled="true" :value="detailData.rate" style="width: 100px;" />
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -126,27 +92,23 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import axios from 'axios'
 
-const router = useRouter()
 const loading = ref(false)
 const detailLoading = ref(false)
 const dialogVisible = ref(false)
 const tableData = ref<any[]>([])
 const editFormRef = ref<FormInstance>()
 
-const editFormData = reactive({
-  signDate: '',
-  signCount: '',
-  noSignCount: '',
-  morningSignedCount: 0,
-  morningUnsignedCount: 0,
-  eveningSignedCount: 0,
-  eveningUnsignedCount: 0,
-  totalSignedCount: 0,
-  totalUnsignedCount: 0
+const detailData = reactive({
+  date: '',
+  totalEmployees: 0,
+  onLeave: 0,
+  expected: 0,
+  signed: 0,
+  unsigned: 0,
+  rate: ''
 })
 
 const pagination = reactive({
@@ -154,6 +116,21 @@ const pagination = reactive({
   pageSize: 8,
   total: 0
 })
+
+const computeRate = (row: any): string => {
+  const expected = row.totalEmployees - row.onLeave
+  if (expected <= 0) return '--'
+  return ((row.signed / expected) * 100).toFixed(1) + '%'
+}
+
+const rateStyle = (row: any): Record<string, string> => {
+  const expected = row.totalEmployees - row.onLeave
+  if (expected <= 0) return {}
+  const rate = (row.signed / expected) * 100
+  if (rate >= 90) return { color: '#67c23a', fontWeight: 'bold' }
+  if (rate >= 70) return { color: '#e6a23c', fontWeight: 'bold' }
+  return { color: '#f56c6c', fontWeight: 'bold' }
+}
 
 const selectByPage = async () => {
   loading.value = true
@@ -164,7 +141,6 @@ const selectByPage = async () => {
         pageSize: pagination.pageSize
       }
     })
-    
     if (response.data && response.data.data) {
       tableData.value = response.data.data || []
       pagination.total = response.data.total || 0
@@ -192,35 +168,34 @@ const handleCurrentChange = (pageNum: number) => {
 const showHistory = async (row: any) => {
   dialogVisible.value = true
   detailLoading.value = true
-  
+
   // 设置基本信息
-  Object.assign(editFormData, {
-    signDate: row.date,
-    signCount: row.yc,
-    noSignCount: row.nc,
-    morningSignedCount: 0,
-    morningUnsignedCount: 0,
-    eveningSignedCount: 0,
-    eveningUnsignedCount: 0,
-    totalSignedCount: 0,
-    totalUnsignedCount: 0
+  Object.assign(detailData, {
+    date: row.date,
+    totalEmployees: row.totalEmployees,
+    onLeave: row.onLeave,
+    expected: row.totalEmployees - row.onLeave,
+    signed: row.signed,
+    unsigned: row.unsigned,
+    rate: computeRate(row)
   })
-  
+
   try {
-    // 获取详细的签到签退统计
+    // 获取详细的考勤统计
     const response = await axios.get('/api/v1/admin/attendance/daily-details', {
       params: { date: row.date }
     })
-    
     if (response.data && response.data.data) {
       const data = response.data.data
-      Object.assign(editFormData, {
-        morningSignedCount: data.morningSignedCount || 0,
-        morningUnsignedCount: data.morningUnsignedCount || 0,
-        eveningSignedCount: data.eveningSignedCount || 0,
-        eveningUnsignedCount: data.eveningUnsignedCount || 0,
-        totalSignedCount: data.totalSignedCount || 0,
-        totalUnsignedCount: data.totalUnsignedCount || 0
+      const expected = data.totalEmployees - data.onLeave
+      const rate = expected > 0 ? ((data.signed / expected) * 100).toFixed(1) + '%' : '--'
+      Object.assign(detailData, {
+        totalEmployees: data.totalEmployees,
+        onLeave: data.onLeave,
+        expected: expected,
+        signed: data.signed,
+        unsigned: data.unsigned,
+        rate: rate
       })
     }
   } catch (error) {
@@ -231,41 +206,15 @@ const showHistory = async (row: any) => {
   }
 }
 
-const showSignCount = (type?: string) => {
-  // 根据类型构建查询参数
-  let queryParams = `type=signed&date=${editFormData.signDate}`
-  if (type) {
-    queryParams += `&signType=${type}`
-  }
-  
-  // 在新标签页中打开已签到页面
-  window.open(`/admin-home/sign-statistics?${queryParams}`, '_blank')
-  dialogVisible.value = false
-}
-
-const showNoSignCount = (type?: string) => {
-  // 根据类型构建查询参数
-  let queryParams = `type=unsigned&date=${editFormData.signDate}`
-  if (type) {
-    queryParams += `&signType=${type}`
-  }
-  
-  // 在新标签页中打开未签到页面
-  window.open(`/admin-home/sign-statistics?${queryParams}`, '_blank')
-  dialogVisible.value = false
-}
-
 const resetForm = () => {
-  Object.assign(editFormData, {
-    signDate: '',
-    signCount: '',
-    noSignCount: '',
-    morningSignedCount: 0,
-    morningUnsignedCount: 0,
-    eveningSignedCount: 0,
-    eveningUnsignedCount: 0,
-    totalSignedCount: 0,
-    totalUnsignedCount: 0
+  Object.assign(detailData, {
+    date: '',
+    totalEmployees: 0,
+    onLeave: 0,
+    expected: 0,
+    signed: 0,
+    unsigned: 0,
+    rate: ''
   })
 }
 

@@ -1,7 +1,11 @@
 package com.oa7.service.Impl;
 
+import com.oa7.constant.AttendanceStatus;
+import com.oa7.constant.TodayStatus;
 import com.oa7.dao.AttendanceDao;
+import com.oa7.dao.HolidayDao;
 import com.oa7.dao.SignDao;
+import com.oa7.pojo.Attendance;
 import com.oa7.pojo.O;
 import com.oa7.pojo.Sign;
 import com.oa7.service.SignService;
@@ -11,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -21,6 +26,9 @@ public class SignServiceImpl implements SignService {
 
     @Autowired
     private AttendanceDao attendanceDao;
+
+    @Autowired
+    private HolidayDao holidayDao;
 
     @Override
     public RESP todaySigned(int currentPage, int pageSize) {
@@ -33,48 +41,74 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public RESP dailyStatistics(int currentPage, int pageSize) {
-        List<Sign> allRecords = signDao.selectAll();
-        TreeMap<String, int[]> map = new TreeMap<>(Comparator.reverseOrder());
-        for (Sign s : allRecords) {
-            String date = s.getSignDate().substring(0, 10);
-            map.putIfAbsent(date, new int[2]);
-            if ("已签到".equals(s.getState())) {
-                map.get(date)[0]++;
-            } else {
-                map.get(date)[1]++;
-            }
-        }
-        List<O> allStats = new ArrayList<>();
-        for (Map.Entry<String, int[]> e : map.entrySet()) {
-            O o = new O();
-            o.setDate(e.getKey());
-            o.setYc(e.getValue()[0]);
-            o.setNc(e.getValue()[1]);
-            allStats.add(o);
-        }
-        int total = allStats.size();
+        // 1. Get all WORKDAY dates from holiday table, ordered DESC
+        List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates();
+        int total = workdayDates.size();
+
+        // 2. Paginate
         int start = (currentPage - 1) * pageSize;
         int end = Math.min(start + pageSize, total);
         if (start >= total) {
             return RESP.ok(Collections.emptyList(), currentPage, total);
         }
-        return RESP.ok(allStats.subList(start, end), currentPage, total);
+        List<LocalDate> pageDates = workdayDates.subList(start, end);
+
+        // 3. For each date, query attendance records and compute stats
+        List<O> statsList = new ArrayList<>();
+        for (LocalDate date : pageDates) {
+            List<Attendance> records = attendanceDao.selectByDate(date);
+            int totalEmployees = records.size();
+            int onLeave = 0;
+            int signed = 0;
+            for (Attendance a : records) {
+                if (a.getAttendanceStatus() == AttendanceStatus.LEAVE) {
+                    onLeave++;
+                }
+                if (a.getTodayStatus() == TodayStatus.CHECKED_IN
+                        || a.getTodayStatus() == TodayStatus.CHECKED_OUT
+                        || a.getAttendanceStatus() == AttendanceStatus.NORMAL) {
+                    signed++;
+                }
+            }
+            int unsigned = totalEmployees - signed - onLeave;
+
+            O o = new O();
+            o.setDate(date.toString());
+            o.setTotalEmployees(totalEmployees);
+            o.setOnLeave(onLeave);
+            o.setSigned(signed);
+            o.setUnsigned(unsigned);
+            statsList.add(o);
+        }
+
+        return RESP.ok(statsList, currentPage, total);
     }
 
     @Override
     public RESP dailyDetails(String date) {
-        int morningSigned = signDao.countByDayByStateAndTypeYes(date, "a");
-        int morningUnsigned = signDao.countByDayByStateAndTypeNo(date, "a");
-        int eveningSigned = signDao.countByDayByStateAndTypeYes(date, "p");
-        int eveningUnsigned = signDao.countByDayByStateAndTypeNo(date, "p");
+        LocalDate localDate = LocalDate.parse(date);
+        List<Attendance> records = attendanceDao.selectByDate(localDate);
+        int totalEmployees = records.size();
+        int onLeave = 0;
+        int signed = 0;
+        for (Attendance a : records) {
+            if (a.getAttendanceStatus() == AttendanceStatus.LEAVE) {
+                onLeave++;
+            }
+            if (a.getTodayStatus() == TodayStatus.CHECKED_IN
+                    || a.getTodayStatus() == TodayStatus.CHECKED_OUT
+                    || a.getAttendanceStatus() == AttendanceStatus.NORMAL) {
+                signed++;
+            }
+        }
+        int unsigned = totalEmployees - signed - onLeave;
 
-        Map<String, Integer> result = new HashMap<>();
-        result.put("morningSignedCount", morningSigned);
-        result.put("morningUnsignedCount", morningUnsigned);
-        result.put("eveningSignedCount", eveningSigned);
-        result.put("eveningUnsignedCount", eveningUnsigned);
-        result.put("totalSignedCount", morningSigned + eveningSigned);
-        result.put("totalUnsignedCount", morningUnsigned + eveningUnsigned);
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalEmployees", totalEmployees);
+        result.put("onLeave", onLeave);
+        result.put("signed", signed);
+        result.put("unsigned", unsigned);
+        result.put("expected", totalEmployees - onLeave);
 
         return RESP.ok(result);
     }

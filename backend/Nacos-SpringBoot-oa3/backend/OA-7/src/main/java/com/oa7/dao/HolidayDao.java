@@ -20,35 +20,34 @@ public interface HolidayDao {
     @Select("SELECT type FROM day.holiday WHERE date = #{date}")
     String selectHolidayTypeByDate(@Param("date") LocalDate date);
 
-    /**
-     * 查询指定年份的所有节假日
-     */
+    @Results(id = "holidayMap", value = {
+        @Result(property = "date", column = "date"),
+        @Result(property = "type", column = "type"),
+        @Result(property = "description", column = "name"),
+        @Result(property = "year", column = "year")
+    })
     @Select("SELECT * FROM day.holiday WHERE year=#{year} ORDER BY date")
     List<Holiday> selectByYear(@Param("year") int year);
 
-    /**
-     * 查询指定日期的节假日记录
-     */
+    @ResultMap("holidayMap")
     @Select("SELECT * FROM day.holiday WHERE date=#{date}")
     Holiday selectByDate(@Param("date") LocalDate date);
 
-    /**
-     * 查询指定日期范围内的节假日记录
-     */
+    @ResultMap("holidayMap")
     @Select("SELECT * FROM day.holiday WHERE date BETWEEN #{start} AND #{end} ORDER BY date")
     List<Holiday> selectByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     /**
      * 插入或更新节假日记录（存在则更新）
      */
-    @Insert("INSERT INTO day.holiday(date, type, description, year) VALUES(#{date}, #{type}, #{description}, #{year}) " +
-            "ON DUPLICATE KEY UPDATE type=#{type}, description=#{description}")
+    @Insert("INSERT INTO day.holiday(date, type, name, year) VALUES(#{date}, #{type}, #{description}, #{year}) " +
+            "ON DUPLICATE KEY UPDATE type=#{type}, name=#{description}")
     int insertOrUpdate(Holiday holiday);
 
     /**
      * 更新节假日记录
      */
-    @Update("UPDATE day.holiday SET type=#{type}, description=#{description} WHERE date=#{date}")
+    @Update("UPDATE day.holiday SET type=#{type}, name=#{description} WHERE date=#{date}")
     int update(Holiday holiday);
 
     /**
@@ -61,11 +60,17 @@ public interface HolidayDao {
      * 批量插入节假日记录（存在则更新）
      */
     @Insert("<script>" +
-            "INSERT INTO day.holiday(date, type, description, year) VALUES " +
+            "INSERT INTO day.holiday(date, type, name, year) VALUES " +
             "<foreach collection='list' item='item' separator=','>" +
             "(#{item.date}, #{item.type}, #{item.description}, #{item.year})" +
             "</foreach> " +
-            "ON DUPLICATE KEY UPDATE type=VALUES(type), description=VALUES(description)" +
+            "ON DUPLICATE KEY UPDATE type=VALUES(type), name=VALUES(name)" +
             "</script>")
     int batchInsert(@Param("list") List<Holiday> list);
+
+    /**
+     * 查询所有 WORKDAY 类型的日期，按降序排列（用于考勤统计）
+     */
+    @Select("SELECT date FROM day.holiday WHERE type='WORKDAY' ORDER BY date DESC")
+    List<LocalDate> selectAllWorkdayDates();
 }
