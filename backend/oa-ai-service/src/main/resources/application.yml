@@ -1,0 +1,64 @@
+server:
+  port: 8083
+  servlet:
+    context-path: /api/v1/ai
+
+spring:
+  application:
+    name: oa-ai-service
+  # 强制使用 Servlet 栈（webflux 仅用于 Flux 流式返回）
+  main:
+    web-application-type: servlet
+  # Redis Stack 连接（向量库存储；需含 RediSearch 模块，普通 Redis 不支持）
+  # 部署：docker run -d --name redis-stack -p 6380:6379 redis/redis-stack-server
+  # 默认 6380 以免影响 OA-7 使用的 6379 普通 Redis；若 6379 已是 Redis Stack 可直接改回
+  # 当前使用内存模式（memory），无需 Redis Stack；有 Docker 后改回 redis 即可
+  data:
+    redis:
+      host: localhost
+      port: 6380
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        # 启动时不自动拉取模型，需提前执行:
+        #   ollama pull qwen2.5:7b        (对话模型)
+        #   ollama pull nomic-embed-text  (向量化模型)
+        pull-model-strategy: never
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.7
+          # Ollama 默认上下文仅 2048 token，不足以容纳 RAG 知识上下文 + 多轮历史，必须调大
+          num-ctx: 8192
+      embedding:
+        options:
+          model: nomic-embed-text
+    # Redis 向量库索引配置（memory 模式下无需初始化）
+    vectorstore:
+      redis:
+        index-name: oa-knowledge-index
+        prefix: "oa:kb:"
+        initialize-schema: false
+
+# AI 助手业务配置
+ai:
+  assistant:
+    # 默认为内存向量库（无需 Docker/Redis Stack）
+    # 切换到 Redis Stack 持久化时改为 redis
+    vector-mode: memory
+    # 公司知识文档（classpath 相对路径），启动时切块灌入向量库
+    knowledge-path: knowledge/company.md
+    # 每个会话保留的最大对话条数（用户+助手消息合计）
+    memory-max-messages: 20
+    # RAG 检索参数
+    rag:
+      top-k: 4
+      similarity-threshold: 0.4
+
+# 日志配置
+logging:
+  level:
+    com.oa.ai: debug
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'

@@ -79,4 +79,38 @@ public interface AttendanceDao {
      */
     @Update("UPDATE day.attendance SET attendance_status = #{attendanceStatus} WHERE id = #{id}")
     int updateAttendanceStatus(@Param("id") Long id, @Param("attendanceStatus") AttendanceStatus attendanceStatus);
+
+    /**
+     * 更新实时状态 (today_status) 通过员工ID和日期
+     */
+    @Update("UPDATE day.attendance SET today_status=#{todayStatus} WHERE emp_id=#{empId} AND date=#{date}")
+    int updateTodayStatusByEmpAndDate(@Param("empId") int empId, @Param("date") LocalDate date,
+                                       @Param("todayStatus") TodayStatus todayStatus);
+
+    /**
+     * 更新签到/签退时间
+     */
+    @Update("UPDATE day.attendance SET check_in_time=#{checkInTime}, check_out_time=#{checkOutTime} " +
+            "WHERE emp_id=#{empId} AND date=#{date}")
+    int updateCheckTime(Attendance attendance);
+
+    /**
+     * 单条插入或更新（ON DUPLICATE KEY）
+     */
+    @Insert("INSERT INTO day.attendance(emp_id, date, today_status) VALUES(#{empId}, #{date}, #{todayStatus}) " +
+            "ON DUPLICATE KEY UPDATE today_status=#{todayStatus}")
+    int insertOrUpdate(@Param("empId") int empId, @Param("date") LocalDate date,
+                       @Param("todayStatus") TodayStatus todayStatus);
+
+    /**
+     * 批量插入或更新（用于任务4的午夜自动创建）
+     */
+    @Insert({"<script>",
+            "INSERT INTO day.attendance(emp_id, date, today_status) VALUES ",
+            "<foreach collection='list' item='item' separator=','>",
+            "(#{item.empId}, #{item.date}, #{item.todayStatus})",
+            "</foreach>",
+            "ON DUPLICATE KEY UPDATE today_status=VALUES(today_status)",
+            "</script>"})
+    int batchInsertOrUpdate(@Param("list") List<Attendance> list);
 }

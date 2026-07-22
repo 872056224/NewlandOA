@@ -1,5 +1,6 @@
 package com.oa7.service.Impl;
 
+import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.SignDao;
 import com.oa7.pojo.O;
 import com.oa7.pojo.Sign;
@@ -17,6 +18,9 @@ public class SignServiceImpl implements SignService {
 
     @Autowired
     private SignDao signDao;
+
+    @Autowired
+    private AttendanceDao attendanceDao;
 
     @Override
     public RESP todaySigned(int currentPage, int pageSize) {

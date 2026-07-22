@@ -1,7 +1,9 @@
 package com.oa2.service.impl;
 
+import com.oa2.dao.AdminDao;
 import com.oa2.dao.RetroactiveSignDao;
 import com.oa2.pojo.RetroactiveSign;
+import com.oa2.service.NotificationService;
 import com.oa2.service.RetroactiveSignService;
 import com.oa2.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,12 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
     @Autowired
     private RetroactiveSignDao retroactiveSignDao;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private AdminDao adminDao;
+
     @Override
     public RESP apply(int number, String signDate, String type, String reason) {
         RetroactiveSign sign = new RetroactiveSign();
@@ -26,6 +34,11 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
         int ret = retroactiveSignDao.insert(sign);
         if (ret > 0) {
+            String typeLabel = type.equals("a") ? "上午" : "下午";
+            // 通知所有管理员
+            notifyAdmins("retroactive_submitted", "新补签申请",
+                    "员工提交了 " + signDate + "(" + typeLabel + ") 的补签申请",
+                    String.valueOf(sign.getId()));
             return RESP.ok("提交成功");
         }
         return RESP.error("提交失败");
@@ -37,5 +50,17 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
         List<RetroactiveSign> list = retroactiveSignDao.selectByNumberPage(number, offset, pageSize);
         int total = retroactiveSignDao.countByNumber(number);
         return RESP.ok(list, currentPage, total);
+    }
+
+    /** 向所有管理员发送通知 */
+    private void notifyAdmins(String type, String title, String content, String bizId) {
+        try {
+            List<Integer> adminIds = adminDao.selectAllIds();
+            for (int adminId : adminIds) {
+                notificationService.sendNotification(adminId, type, title, content, bizId);
+            }
+        } catch (Exception e) {
+            System.err.println("通知管理员失败: " + e.getMessage());
+        }
     }
 }

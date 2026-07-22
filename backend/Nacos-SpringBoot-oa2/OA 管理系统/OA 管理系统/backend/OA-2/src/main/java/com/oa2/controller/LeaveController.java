@@ -29,7 +29,8 @@ public class LeaveController {
                 request.getType(),
                 request.getStartDate(),
                 request.getEndDate(),
-                request.getReason()
+                request.getReason(),
+                request.getDuration()
         );
     }
 
@@ -60,6 +61,7 @@ public class LeaveController {
         private String startDate;
         private String endDate;
         private String reason;
+        private String duration;
 
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
@@ -69,5 +71,7 @@ public class LeaveController {
         public void setEndDate(String endDate) { this.endDate = endDate; }
         public String getReason() { return reason; }
         public void setReason(String reason) { this.reason = reason; }
+        public String getDuration() { return duration; }
+        public void setDuration(String duration) { this.duration = duration; }
     }
 }

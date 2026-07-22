@@ -25,6 +25,10 @@ public interface LeaveDao {
     @Update("UPDATE day.leave SET status=#{status} WHERE id=#{id}")
     int updateStatus(@Param("id") String id, @Param("status") String status);
 
+    /** 带乐观锁的状态更新（version 防并发） */
+    @Update("UPDATE day.leave SET status=#{status}, version=version+1 WHERE id=#{id} AND version=#{version}")
+    int updateStatusWithVersion(@Param("id") String id, @Param("status") String status, @Param("version") int version);
+
     @Select("SELECT count(*) FROM day.leave WHERE number=#{number} AND status='已批准' " +
             "AND DATE(start_date) <= #{today} AND DATE(end_date) >= #{today}")
     int countApprovedLeaveToday(@Param("number") int number, @Param("today") String today);

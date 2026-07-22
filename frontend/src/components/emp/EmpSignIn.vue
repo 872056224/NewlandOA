@@ -45,7 +45,7 @@
             <div class="card-actions">
               <button
                 :class="signRecord.state === '已签到' ? 'apple-btn btn-signed' : 'apple-btn apple-btn-primary'"
-                :disabled="signRecord.state === '已签到'"
+                :disabled="signRecord.state === '已签到' || signRecord.disabled"
                 @click="handleSign(signRecord)"
               >
                 {{ getButtonText(signRecord) }}
@@ -73,37 +73,39 @@
         empty-text="暂无签到记录"
         class="el-table--borderless"
       >
-        <el-table-column label="日期" width="100">
+        <el-table-column label="日期" width="110">
           <template #default="{ row }">
-            <span class="cell-text">{{ formatDate(row.signDate) }}</span>
+            <span class="cell-text">{{ row.date }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="类型" width="70" align="center">
+        <el-table-column label="签到" width="110" align="center">
           <template #default="{ row }">
-            <span class="type-tag" :class="row.type === 'a' ? 'type-am' : 'type-pm'">
-              {{ getSignTypeText(row.type) }}
+            <span class="cell-text">{{ formatTimeOnly(row.checkInTime) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="签退" width="110" align="center">
+          <template #default="{ row }">
+            <span class="cell-text">{{ formatTimeOnly(row.checkOutTime) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <span :class="row.todayStatus === 'CHECKED_IN' || row.todayStatus === 'CHECKED_OUT' ? 'state-signed' : 'state-missed'">
+              {{ formatTodayStatus(row.todayStatus) }}
             </span>
           </template>
         </el-table-column>
-
-        <el-table-column label="时间" width="110">
+        <el-table-column label="签到地址" min-width="160">
           <template #default="{ row }">
-            <span class="cell-text">{{ formatSignTime(row.signDate) }}</span>
+            <span class="cell-text location-cell">{{ row.checkInAddress || '--' }}</span>
           </template>
         </el-table-column>
-
-        <el-table-column label="状态" width="70" align="center">
+        <el-table-column label="签退地址" min-width="160">
           <template #default="{ row }">
-            <span :class="row.state === '已签到' ? 'state-signed' : 'state-missed'">
-              {{ row.state }}
-            </span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="签到地点" min-width="150" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span class="cell-text location-cell">{{ row.sign_address || '未记录位置' }}</span>
+            <span class="cell-text location-cell">{{ row.checkOutAddress || '--' }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -308,6 +310,23 @@ const formatSignTime = (dateStr: string): string => {
   return parts.length > 1 ? parts[1].replace(/:\d{2}$/, '') : ''
 }
 
+// 从 ISO 时间戳取 HH:mm
+const formatTimeOnly = (dt: string): string => {
+  if (!dt) return '--'
+  return dt.substring(11, 16)
+}
+
+// TodayStatus 转中文
+const formatTodayStatus = (status: string): string => {
+  const map: Record<string, string> = {
+    'NOT_CHECKED_IN': '未签到',
+    'CHECKED_IN': '已签到',
+    'CHECKED_OUT': '已签退',
+    'LEAVE': '已请假',
+  }
+  return map[status] || status || '--'
+}
+
 // 获取签到类型文本
 const getSignTypeText = (type: string): string => {
   return type === 'a' ? '上班签到' : '下班签退'
@@ -325,6 +344,9 @@ const getStateText = (record: any): string => {
   }
   if (record.state === '已签到') {
     return record.type === 'a' ? '已签到' : '已签退'
+  }
+  if (record.disabled) {
+    return '未签到'
   }
   return record.type === 'a' ? '未签到' : '未签退'
 }
@@ -352,6 +374,9 @@ const getButtonText = (record: any): string => {
   }
   if (record.state === '已签到') {
     return record.type === 'a' ? '已签到' : '已签退'
+  }
+  if (record.disabled) {
+    return '先签到'
   }
   return record.type === 'a' ? '立即签到' : '立即签退'
 }
@@ -397,40 +422,37 @@ const getStatusClass = (): string => {
 const getTodaySignData = async () => {
   loading.value = true
   try {
-    const response = await axios.get('/api/v1/employee/attendance/my-records')
-    
+    const response = await axios.get('/api/v1/employee/attendance/today')
+
     if (response.data && response.data.code === 200) {
-      const records = response.data.data || []
-      
-      // 获取今日日期
+      const d = response.data.data || {}
       const today = new Date().toISOString().split('T')[0]
-      
-      // 过滤今日记录
-      const todayRecords = records.filter((record: any) => {
-        return record.signDate && record.signDate.startsWith(today)
-      })
-      
-      // 确保有上班和下班两条记录
-      const morningRecord = todayRecords.find((r: any) => r.type === 'a') || {
+      const status = d.todayStatus || 'NOT_CHECKED_IN'
+      const hasCheckedIn = status === 'CHECKED_IN' || status === 'CHECKED_OUT'
+
+      // 上班卡（签到）
+      const morningRecord = {
         type: 'a',
-        signDate: `${today} 08:30:00:000`,
-        state: '未签到',
+        signDate: d.checkInTime || `${today} 08:30:00`,
+        state: hasCheckedIn ? '已签到' : '未签到',
         number: 0,
         name: '',
         dept_name: '',
-        sign_address: ''
+        sign_address: d.checkInAddress || (d.checkInTime ? `签到 ${d.checkInTime.substring(11, 16)}` : '')
       }
-      
-      const eveningRecord = todayRecords.find((r: any) => r.type === 'p') || {
+
+      // 下班卡（签退），只有已签到才启用
+      const eveningRecord = {
         type: 'p',
-        signDate: `${today} 17:30:00:000`,
-        state: '未签到',
+        signDate: d.checkOutTime || `${today} 17:30:00`,
+        state: status === 'CHECKED_OUT' ? '已签到' : (hasCheckedIn ? '未签到' : '--'),
+        disabled: !hasCheckedIn,
         number: 0,
         name: '',
         dept_name: '',
-        sign_address: ''
+        sign_address: d.checkOutAddress || (d.checkOutTime ? `签退 ${d.checkOutTime.substring(11, 16)}` : '')
       }
-      
+
       todaySignData.value = [morningRecord, eveningRecord]
     } else {
       ElMessage.error(response.data?.message || '获取签到数据失败')
@@ -500,57 +522,33 @@ const handleSign = async (record: any) => {
 
 // 确认签到
 const confirmSign = async () => {
-  if (signing.value) {
-    return // 防止重复提交
-  }
-  
+  if (signing.value) return
   signing.value = true
-  
+
   try {
-    // 使用缓存的坐标，如果没有则尝试获取
     let coordinates = currentCoordinates.value
     if (!coordinates) {
       try {
         coordinates = await getCurrentLocation()
         currentCoordinates.value = coordinates
-      } catch (locError) {
-        console.warn('获取位置失败，将使用空地址签到:', locError)
-        coordinates = ''
-        locationInfo.value = '位置获取失败，签到记录将不包含地址信息'
-      }
+      } catch { /* 忽略定位失败 */ }
     }
 
-    // 构建签到数据
-    const signData = {
-      number: signInfo.number,
-      signDate: signInfo.signDate,
-      type: signInfo.type,
-      state: '已签到'
-    }
-    
-    // 发送签到请求
-    const response = await axios.post(
-      `/api/v1/employee/attendance/check-in?coordinates=${encodeURIComponent(coordinates)}`,
-      signData,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
+    const isCheckIn = signInfo.type === 'a'
+    const url = `/api/v1/employee/attendance/${isCheckIn ? 'check-in' : 'check-out'}?coordinates=${encodeURIComponent(coordinates || '')}`
+
+    const response = await axios.post(url)
     if (response.data && response.data.code === 200) {
       ElMessage.success(`${getSignTypeText(signInfo.type)}成功！`)
       showSignDialog.value = false
-      // 刷新数据
       await getTodaySignData()
       await getHistoryData()
     } else {
-      ElMessage.error(response.data?.message || '签到失败，请重试')
+      ElMessage.error(response.data?.message || '操作失败，请重试')
     }
   } catch (error: any) {
-    console.error('签到失败:', error)
-    ElMessage.error(error.message || '签到失败，请重试')
+    console.error('操作失败:', error)
+    ElMessage.error(error.message || '操作失败，请重试')
   } finally {
     signing.value = false
     currentSignType.value = ''
@@ -712,7 +710,7 @@ onUnmounted(() => {
 
 <style scoped>
 .sign-in {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 40px 32px;
 }

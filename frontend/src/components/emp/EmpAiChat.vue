@@ -120,6 +120,9 @@ import { ElMessage } from 'element-plus'
 import { Service, UserFilled, Delete, Promotion, RefreshRight } from '@element-plus/icons-vue'
 import axios from 'axios'
 
+/** AI 对话 API 调用超时（毫秒） */
+const AI_TIMEOUT = 60000
+
 interface RelatedQuestion {
   question: string
   score: number
@@ -158,7 +161,7 @@ const statusClass = computed(() =>
 const statusText = computed(() => {
   if (aiOnline.value === null) return '正在检测大模型状态…'
   if (aiOnline.value) {
-    return `大模型在线（${'Agent'}）${ragReady.value ? ' · RAG 知识检索' : ' · 无知识库'}`
+    return `大模型在线（${modelName.value || 'qwen2.5:7b'}）${ragReady.value ? '· Spring AI RAG 知识库' : '· 无知识库'}`
   }
   return 'AI 在线 · 知识库问答'
 })
@@ -178,7 +181,7 @@ const pushWelcome = () => {
   })
 }
 
-/** 探测 AI 微服务与本地大模型是否就绪 */
+/** 探测 OA-2 员工服务的本地大模型是否就绪 */
 const checkHealth = async () => {
   try {
     const res = await axios.get('/api/v1/ai/chat/health', { timeout: 6000 })
@@ -192,14 +195,14 @@ const checkHealth = async () => {
   }
 }
 
-/** 开场推荐问题（来自 OA-2 FAQ 知识库，加载失败静默跳过） */
+/** 开场推荐问题（来自 oa-ai-service 知识库词条） */
 const loadSuggestions = async () => {
   try {
-    const res = await axios.get('/api/v1/employee/chat/suggestions')
+    const res = await axios.get('/api/v1/ai/chat/suggestions')
     if (res.data?.code === 200 && Array.isArray(res.data.data)) {
       openingSuggestions.value = res.data.data
       const first = messages.value[0]
-      if (first && first.role === 'assistant' && !first.suggestions) {
+      if (first && first.role === 'assistant') {
         first.suggestions = [...openingSuggestions.value]
       }
     }
@@ -219,84 +222,57 @@ const loadProfile = async () => {
   }
 }
 
-/** 大模型流式对话（SSE 解析，逐 token 打字机渲染） */
+/** 大模型对话（调用 oa-ai-service Spring AI RAG 问答，非流式） */
 const streamChat = async (question: string): Promise<void> => {
   const assistantMsg: ChatMessage = { role: 'assistant', content: '', streaming: true, via: 'llm' }
   messages.value.push(assistantMsg)
   scrollToBottom()
 
-  let gotToken = false
   try {
-    const res = await fetch('/api/v1/ai/chat/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ sessionId: sessionId.value, message: question }),
-    })
-    if (!res.ok || !res.body) throw new Error('HTTP ' + res.status)
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder('utf-8')
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-
-      // SSE 帧以空行分隔；一帧内可能有多条 data: 行
-      const frames = buffer.split('\n\n')
-      buffer = frames.pop() ?? ''
-      for (const frame of frames) {
-        const dataStr = frame
-          .split('\n')
-          .filter((line) => line.startsWith('data:'))
-          .map((line) => line.slice(5))
-          .join('\n')
-        if (!dataStr.trim()) continue
-        try {
-          const payload = JSON.parse(dataStr)
-          if (payload.c) {
-            assistantMsg.content += payload.c
-            gotToken = true
-            scrollToBottom()
-          } else if (payload.error) {
-            throw new Error(payload.error)
-          }
-        } catch (err) {
-          if (err instanceof SyntaxError) continue // 不完整 JSON 帧，忽略
-          throw err
-        }
+    const res = await axios.post('/api/v1/ai/chat', { message: question, sessionId: sessionId.value }, { timeout: AI_TIMEOUT })
+    const body = res.data
+    if (body && body.code === 200 && body.data) {
+      assistantMsg.content = body.data.reply
+      assistantMsg.streaming = false
+      assistantMsg.via = 'llm'
+      if (body.data.sessionId) {
+        sessionId.value = body.data.sessionId
       }
+      if (body.data.related?.length) {
+        assistantMsg.related = body.data.related
+      }
+      if (body.data.suggestions?.length) {
+        assistantMsg.suggestions = body.data.suggestions
+      }
+      scrollToBottom()
+    } else {
+      throw new Error(body?.message || 'AI 服务异常')
     }
-    if (!gotToken) throw new Error('大模型无响应')
-    assistantMsg.streaming = false
   } catch (err) {
-    // 流式失败：移除占位消息，交由上层降级到 FAQ
     const idx = messages.value.indexOf(assistantMsg)
-    if (idx >= 0 && !gotToken) {
+    if (idx >= 0) {
       messages.value.splice(idx, 1)
-      throw err
     }
-    // 已输出部分内容则保留并追加提示
-    assistantMsg.streaming = false
-    assistantMsg.content += '\n\n（回答中断，请重试）'
+    throw err
   }
 }
 
-/** FAQ 降级：调用 OA-2 自建向量库检索式问答 */
+/** FAQ 降级：调用 oa-ai-service 同步对话接口 */
 const faqChat = async (question: string): Promise<void> => {
   try {
-    const res = await axios.post('/api/v1/employee/chat/ask', { question })
+    const res = await axios.post('/api/v1/ai/chat', { message: question, sessionId: sessionId.value }, { timeout: AI_TIMEOUT })
     const body = res.data
     if (body && body.code === 200 && body.data) {
       messages.value.push({
         role: 'assistant',
-        content: body.data.answer,
+        content: body.data.reply,
         via: 'faq',
         related: body.data.related?.length ? body.data.related : undefined,
         suggestions: body.data.suggestions?.length ? body.data.suggestions : undefined,
       })
+      if (body.data.sessionId) {
+        sessionId.value = body.data.sessionId
+      }
     } else {
       throw new Error(body?.message || 'FAQ 服务异常')
     }
@@ -332,10 +308,18 @@ const send = async (text?: string) => {
       } catch {
         // 大模型不可用：标记离线并降级 FAQ
         aiOnline.value = false
-        await faqChat(question)
+        try {
+          await faqChat(question)
+        } catch {
+          // faqChat 内部已有错误提示，无需额外处理
+        }
       }
     } else {
-      await faqChat(question)
+      try {
+        await faqChat(question)
+      } catch {
+        // faqChat 内部已有错误提示
+      }
     }
   } finally {
     loading.value = false
@@ -345,9 +329,10 @@ const send = async (text?: string) => {
 
 const clearChat = async () => {
   messages.value = []
+  try {
+    await axios.delete(`/api/v1/ai/chat/${sessionId.value}`)
+  } catch { /* 静默忽略 */ }
   pushWelcome()
-  // 清空服务端会话记忆并重新探测大模型（静默执行）
-  axios.delete(`/api/v1/ai/chat/${sessionId.value}`).catch(() => {})
   checkHealth()
   ElMessage.success('已开启新对话')
 }

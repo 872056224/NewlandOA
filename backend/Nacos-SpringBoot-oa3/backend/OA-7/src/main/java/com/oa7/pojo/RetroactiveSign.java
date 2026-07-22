@@ -11,4 +11,5 @@ public class RetroactiveSign {
     private String reason;
     private String status;
     private String create_time;
+    private int version;
 }

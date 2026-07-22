@@ -13,4 +13,5 @@ public class Leave {
     private String end_date;
     private String reason;
     private String status;
+    private int version;
 }

@@ -123,6 +123,11 @@ const router = createRouter({
           path: 'leave-approval',
           name: 'LeaveApproval',
           component: () => import('../components/admin/LeaveApproval.vue')
+        },
+        {
+          path: 'notifications',
+          name: 'AdminNotifications',
+          component: () => import('../components/admin/NotificationList.vue')
         }
       ]
     }

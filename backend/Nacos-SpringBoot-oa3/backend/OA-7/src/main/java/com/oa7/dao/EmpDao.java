@@ -71,6 +71,10 @@ public interface EmpDao {
     @Select("select number from day.emp")
     List<Integer> selectAllEmpNumber();
 
+    // 获取所有活跃员工的编号（没有活跃标志字段时等价于 selectAllEmpNumber）
+    @Select("select number from day.emp")
+    List<Integer> selectAllActiveEmpNumbers();
+
     //根据员工编号查询员工信息
     @Select("select emp.*,dept_name,duty_name from " +
             "day.emp left join department on department.dept_id = emp.dept_id " +

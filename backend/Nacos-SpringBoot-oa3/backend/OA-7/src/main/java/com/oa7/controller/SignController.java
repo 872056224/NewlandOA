@@ -1,5 +1,6 @@
 package com.oa7.controller;
 
+import com.oa7.dao.AttendanceDao;
 import com.oa7.service.SignService;
 import com.oa7.pojo.Sign;
 import com.oa7.util.DU;
@@ -8,8 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 管理员端 - 考勤管理控制器
@@ -21,6 +25,24 @@ public class SignController {
 
     @Autowired
     private SignService signService;
+
+    @Autowired
+    private AttendanceDao attendanceDao;
+
+    /**
+     * 今日考勤统计概览
+     */
+    @GetMapping("/today/stats")
+    public RESP todayStats() {
+        LocalDate today = LocalDate.now();
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("total", attendanceDao.countByDate(today));
+        stats.put("checkedIn", attendanceDao.countCheckedInByDate(today));
+        stats.put("late", attendanceDao.countLateByDate(today));
+        stats.put("leave", attendanceDao.countLeaveByDate(today));
+        stats.put("absence", attendanceDao.countAbsenceByDate(today));
+        return RESP.ok(stats);
+    }
 
     @GetMapping("/today/signed")
     public RESP todaySigned(@RequestParam int currentPage,

@@ -18,7 +18,7 @@
     >
       <el-table-column 
         label="部门序号" 
-        prop="dept_id" 
+        prop="dept_id"
         min-width="130" 
         align="center" 
       />

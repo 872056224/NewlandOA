@@ -13,4 +13,7 @@ public class Leave {
     private String end_date;
     private String reason;
     private String status;
+    /** FULL_DAY / HALF_DAY_AM / HALF_DAY_PM */
+    private String duration;
+    private int version;
 }

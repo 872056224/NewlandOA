@@ -148,7 +148,7 @@ onMounted(() => {
 
 .info-card {
   width: 100%;
-  max-width: 640px;
+  max-width: 860px;
   padding: 40px;
 }
 

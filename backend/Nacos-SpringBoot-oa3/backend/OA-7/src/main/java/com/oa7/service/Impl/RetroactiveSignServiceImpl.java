@@ -35,15 +35,29 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
     @Override
     public RESP approve(int id) {
-        retroactiveSignDao.updateStatus(id, "已批准");
-
         RetroactiveSign sign = retroactiveSignDao.selectById(id);
+        if (sign == null) return RESP.error("补签申请不存在");
+        if (!"待审批".equals(sign.getStatus())) {
+            return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
+        }
+
+        // 乐观锁更新
+        int ret = retroactiveSignDao.updateStatusWithVersion(id, "已批准", sign.getVersion());
+        if (ret == 0) {
+            return RESP.error("该申请已被他人处理，请刷新后重试");
+        }
+
+        // 更新签到状态
+        sign = retroactiveSignDao.selectById(id); // 重新读取最新数据
         if (sign != null) {
             signDao.updateStateByDateAndType(sign.getNumber(), sign.getSign_date(), sign.getType());
             String typeLabel = sign.getType().equals("a") ? "上午" : "下午";
             notificationDao.insert("retroactive_approved", "补签已批准",
                     "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已获批准",
                     sign.getNumber(), String.valueOf(id));
+
+            // 将该补签单的所有管理员通知标记为已读
+            notificationDao.markAllReadByBizId(String.valueOf(id));
         }
 
         return RESP.ok("操作成功");
@@ -51,14 +65,27 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
     @Override
     public RESP reject(int id) {
-        retroactiveSignDao.updateStatus(id, "已拒绝");
-
         RetroactiveSign sign = retroactiveSignDao.selectById(id);
+        if (sign == null) return RESP.error("补签申请不存在");
+        if (!"待审批".equals(sign.getStatus())) {
+            return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
+        }
+
+        // 乐观锁更新
+        int ret = retroactiveSignDao.updateStatusWithVersion(id, "已拒绝", sign.getVersion());
+        if (ret == 0) {
+            return RESP.error("该申请已被他人处理，请刷新后重试");
+        }
+
+        sign = retroactiveSignDao.selectById(id);
         if (sign != null) {
             String typeLabel = sign.getType().equals("a") ? "上午" : "下午";
             notificationDao.insert("retroactive_rejected", "补签已拒绝",
                     "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已被拒绝",
                     sign.getNumber(), String.valueOf(id));
+
+            // 将该补签单的所有管理员通知标记为已读
+            notificationDao.markAllReadByBizId(String.valueOf(id));
         }
 
         return RESP.ok("操作成功");

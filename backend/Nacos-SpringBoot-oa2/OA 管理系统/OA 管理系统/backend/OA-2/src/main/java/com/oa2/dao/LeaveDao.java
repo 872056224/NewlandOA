@@ -10,8 +10,8 @@ import java.util.List;
 @Repository
 public interface LeaveDao {
 
-    @Insert("INSERT INTO day.leave(id, number, name, type, dept_name, start_date, end_date, reason, status) " +
-            "VALUES(#{id}, #{number}, #{name}, #{type}, #{dept_name}, #{start_date}, #{end_date}, #{reason}, #{status})")
+    @Insert("INSERT INTO day.leave(id, number, name, type, dept_name, start_date, end_date, reason, status, duration) " +
+            "VALUES(#{id}, #{number}, #{name}, #{type}, #{dept_name}, #{start_date}, #{end_date}, #{reason}, #{status}, #{duration})")
     int insert(Leave leave);
 
     @Select("SELECT * FROM day.leave WHERE number=#{number} ORDER BY start_date DESC LIMIT #{offset}, #{limit}")

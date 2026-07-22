@@ -80,7 +80,7 @@ onMounted(() => fetchList())
 </script>
 
 <style scoped>
-.notif-page { max-width: 800px; margin: 0 auto; padding: 40px 32px; }
+.notif-page { max-width: 1000px; margin: 0 auto; padding: 40px 32px; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .page-header h2 { font-size: 24px; font-weight: 700; color: #1d1d1f; margin: 0; }
 .msg-cell { display: flex; align-items: flex-start; gap: 10px; padding: 4px 0; }
