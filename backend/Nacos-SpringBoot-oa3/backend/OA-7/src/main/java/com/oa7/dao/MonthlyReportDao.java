@@ -17,7 +17,7 @@ public interface MonthlyReportDao {
      * 插入或更新月度统计（存在则更新）
      */
     @Insert("INSERT INTO day.monthly_report(" +
-            "year_month, emp_id, emp_name, dept_id, work_days, actual_days, " +
+            "`year_month`, emp_id, emp_name, dept_id, work_days, actual_days, " +
             "late_count, early_count, leave_count, absence_count, missing_card_count, attendance_rate" +
             ") VALUES(" +
             "#{yearMonth}, #{empId}, #{empName}, #{deptId}, #{workDays}, #{actualDays}, " +
@@ -32,7 +32,7 @@ public interface MonthlyReportDao {
     /**
      * 根据员工和月份查询月度统计
      */
-    @Select("SELECT * FROM day.monthly_report WHERE emp_id = #{empId} AND year_month = #{yearMonth}")
+    @Select("SELECT * FROM day.monthly_report WHERE emp_id = #{empId} AND `year_month` = #{yearMonth}")
     @Results(id = "monthlyReportResult", value = {
         @Result(property = "id", column = "id"),
         @Result(property = "yearMonth", column = "year_month"),
@@ -54,14 +54,14 @@ public interface MonthlyReportDao {
     /**
      * 根据部门和月份查询月度统计列表
      */
-    @Select("SELECT * FROM day.monthly_report WHERE dept_id = #{deptId} AND year_month = #{yearMonth}")
+    @Select("SELECT * FROM day.monthly_report WHERE dept_id = #{deptId} AND `year_month` = #{yearMonth}")
     @ResultMap("monthlyReportResult")
     List<MonthlyReport> selectByDeptAndMonth(@Param("deptId") int deptId, @Param("yearMonth") String yearMonth);
 
     /**
      * 根据月份查询所有月度统计
      */
-    @Select("SELECT * FROM day.monthly_report WHERE year_month = #{yearMonth}")
+    @Select("SELECT * FROM day.monthly_report WHERE `year_month` = #{yearMonth}")
     @ResultMap("monthlyReportResult")
     List<MonthlyReport> selectByMonth(@Param("yearMonth") String yearMonth);
 }

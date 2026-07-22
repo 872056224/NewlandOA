@@ -131,23 +131,22 @@ const loadChartData = async () => {
     const response = await axios.get('/api/v1/admin/attendance/statistics/chart')
     
     if (response.data) {
-      // 数据直接在 response.data 中，不需要嵌套访问
-      const dates = response.data.data || []        // 日期数组
-      const signedData = response.data.data1 || []  // 已签到人数
-      const unsignedData = response.data.data2 || [] // 未签到人数
-      const totalData = response.data.data3 || []   // 需签到总人数
-      
-      // 检查数据是否有效
+      // 数据格式: data=日期数组, data1=已签到, data2=未签到, data3=请假人数
+      const dates = response.data.data || []
+      const signedData = response.data.data1 || []
+      const unsignedData = response.data.data2 || []
+      const leaveData = response.data.data3 || []
+
       if (dates.length === 0) {
         console.warn('日期数据为空')
         hasError.value = true
         ElMessage.warning('暂无统计数据')
         return
       }
-      
+
       const option = {
         title: {
-          text: '近五日签到图',
+          text: '近四日签到图（工作日）',
           textStyle: {
             color: '#1D1D1F'
           }
@@ -159,7 +158,7 @@ const loadChartData = async () => {
           }
         },
         legend: {
-          data: ['已签到人数', '未签到人数', '需签到总人数'],
+          data: ['已签到', '未签到', '请假'],
           textStyle: {
             color: '#86868B'
           }
@@ -180,7 +179,7 @@ const loadChartData = async () => {
         },
         series: [
           {
-            name: '已签到人数',
+            name: '已签到',
             type: 'bar',
             data: signedData,
             itemStyle: {
@@ -188,7 +187,7 @@ const loadChartData = async () => {
             }
           },
           {
-            name: '未签到人数',
+            name: '未签到',
             type: 'bar',
             data: unsignedData,
             itemStyle: {
@@ -196,11 +195,11 @@ const loadChartData = async () => {
             }
           },
           {
-            name: '需签到总人数',
+            name: '请假',
             type: 'bar',
-            data: totalData,
+            data: leaveData,
             itemStyle: {
-              color: '#0071E3'
+              color: '#AF52DE'
             }
           }
         ]

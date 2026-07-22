@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SignServiceImpl implements SignService {
@@ -41,8 +42,11 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public RESP dailyStatistics(int currentPage, int pageSize) {
-        // 1. Get all WORKDAY dates from holiday table, ordered DESC
-        List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates();
+        // 1. Get WORKDAY dates up to today from holiday table, ordered DESC
+        LocalDate today = LocalDate.now();
+        List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
+                .filter(d -> !d.isAfter(today))
+                .collect(Collectors.toList());
         int total = workdayDates.size();
 
         // 2. Paginate
@@ -115,38 +119,43 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public RESP chartData() {
-        List<Sign> allRecords = signDao.selectAll();
-        List<String> dates = new ArrayList<>();
-        List<Integer> signed = new ArrayList<>();
-        List<Integer> unsigned = new ArrayList<>();
-        List<Integer> total = new ArrayList<>();
+        // Get 4 most recent WORKDAY dates up to today
+        LocalDate today = LocalDate.now();
+        List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
+                .filter(d -> !d.isAfter(today))
+                .limit(4)
+                .collect(Collectors.toList());
+        // Order ascending for the chart
+        Collections.reverse(workdayDates);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        Calendar cal = Calendar.getInstance();
+        List<String> dateLabels = new ArrayList<>();
+        List<Integer> signedData = new ArrayList<>();
+        List<Integer> unsignedData = new ArrayList<>();
+        List<Integer> leaveData = new ArrayList<>();
 
-        for (int i = 4; i >= 0; i--) {
-            Calendar dayCal = (Calendar) cal.clone();
-            dayCal.add(Calendar.DAY_OF_YEAR, -i);
-            String dateStr = sdf.format(dayCal.getTime());
-            dates.add(dateStr);
-
+        for (LocalDate date : workdayDates) {
+            List<Attendance> records = attendanceDao.selectByDate(date);
             int signedCount = 0;
             int unsignedCount = 0;
-            for (Sign s : allRecords) {
-                if (s.getSignDate() != null && s.getSignDate().startsWith(dateStr)) {
-                    if ("已签到".equals(s.getState())) {
-                        signedCount++;
-                    } else {
-                        unsignedCount++;
-                    }
+            int leaveCount = 0;
+            for (Attendance a : records) {
+                if (a.getAttendanceStatus() == AttendanceStatus.LEAVE) {
+                    leaveCount++;
+                } else if (a.getTodayStatus() == TodayStatus.CHECKED_IN
+                        || a.getTodayStatus() == TodayStatus.CHECKED_OUT
+                        || a.getAttendanceStatus() == AttendanceStatus.NORMAL) {
+                    signedCount++;
+                } else {
+                    unsignedCount++;
                 }
             }
-            signed.add(signedCount);
-            unsigned.add(unsignedCount);
-            total.add(signedCount + unsignedCount);
+            dateLabels.add(date.toString());
+            signedData.add(signedCount);
+            unsignedData.add(unsignedCount);
+            leaveData.add(leaveCount);
         }
 
-        return RESP.ok(dates, signed, unsigned, total);
+        return RESP.ok(dateLabels, signedData, unsignedData, leaveData);
     }
 
     @Override
