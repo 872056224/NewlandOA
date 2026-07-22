@@ -133,6 +133,11 @@ const router = createRouter({
           path: 'holiday-manage',
           name: 'HolidayManage',
           component: () => import('../components/admin/HolidayManage.vue')
+        },
+        {
+          path: 'attendance-rule',
+          name: 'AttendanceRule',
+          component: () => import('../components/admin/AttendanceRuleManage.vue')
         }
       ]
     }
