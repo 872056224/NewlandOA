@@ -2,14 +2,19 @@ package com.oa7.service.Impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.oa7.constant.TodayStatus;
+import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.LeaveDao;
 import com.oa7.dao.NotificationDao;
+import com.oa7.pojo.Attendance;
 import com.oa7.pojo.Leave;
 import com.oa7.service.LeaveService;
+import com.oa7.service.RecalculateAttendanceService;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -20,6 +25,12 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Autowired
     private NotificationDao notificationDao;
+
+    @Autowired
+    private RecalculateAttendanceService recalculateAttendanceService;
+
+    @Autowired
+    private AttendanceDao attendanceDao;
 
     @Override
     public RESP getPending(int currentPage, int pageSize) {
@@ -59,6 +70,11 @@ public class LeaveServiceImpl implements LeaveService {
         // 将该请假单的所有管理员通知标记为已读（其他管理员的红点消失）
         notificationDao.markAllReadByBizId(id);
 
+        // 考勤重算：将请假日期范围内的考勤记录重新计算
+        LocalDate startDate = LocalDate.parse(leave.getStart_date().substring(0, 10));
+        LocalDate endDate = LocalDate.parse(leave.getEnd_date().substring(0, 10));
+        recalculateAttendanceService.recalculate(leave.getNumber(), startDate, endDate);
+
         return RESP.ok("操作成功");
     }
 
@@ -83,6 +99,17 @@ public class LeaveServiceImpl implements LeaveService {
 
         // 将该请假单的所有管理员通知标记为已读
         notificationDao.markAllReadByBizId(id);
+
+        // 考勤重算：清除请假日期范围内 today_status 为 LEAVE 的记录，然后重新计算
+        LocalDate startDate = LocalDate.parse(leave.getStart_date().substring(0, 10));
+        LocalDate endDate = LocalDate.parse(leave.getEnd_date().substring(0, 10));
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            Attendance att = attendanceDao.selectByEmpAndDate(leave.getNumber(), date);
+            if (att != null && att.getTodayStatus() == TodayStatus.LEAVE) {
+                attendanceDao.updateTodayStatusByEmpAndDate(leave.getNumber(), date, TodayStatus.NOT_CHECKED_IN);
+            }
+        }
+        recalculateAttendanceService.recalculate(leave.getNumber(), startDate, endDate);
 
         return RESP.ok("操作成功");
     }
