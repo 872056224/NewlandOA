@@ -128,6 +128,11 @@ const router = createRouter({
           path: 'notifications',
           name: 'AdminNotifications',
           component: () => import('../components/admin/NotificationList.vue')
+        },
+        {
+          path: 'holiday-manage',
+          name: 'HolidayManage',
+          component: () => import('../components/admin/HolidayManage.vue')
         }
       ]
     }

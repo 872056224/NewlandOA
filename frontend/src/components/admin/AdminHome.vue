@@ -88,6 +88,10 @@
               <el-icon><Bell /></el-icon>
               <span>通知列表</span>
             </el-menu-item>
+            <el-menu-item index="/admin-home/holiday-manage">
+              <el-icon><Calendar /></el-icon>
+              <span>节假日管理</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
 
@@ -106,7 +110,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Odometer, User, OfficeBuilding, Briefcase, Clock,
-  PieChart, ChatDotRound, Edit, Bell
+  PieChart, ChatDotRound, Edit, Bell, Calendar
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
