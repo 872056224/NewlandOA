@@ -2,15 +2,22 @@ package com.oa7.service.Impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.oa7.constant.TodayStatus;
+import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.NotificationDao;
 import com.oa7.dao.RetroactiveSignDao;
 import com.oa7.dao.SignDao;
+import com.oa7.pojo.Attendance;
 import com.oa7.pojo.RetroactiveSign;
+import com.oa7.service.RecalculateAttendanceService;
 import com.oa7.service.RetroactiveSignService;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -24,6 +31,12 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
     @Autowired
     private NotificationDao notificationDao;
+
+    @Autowired
+    private AttendanceDao attendanceDao;
+
+    @Autowired
+    private RecalculateAttendanceService recalculateAttendanceService;
 
     @Override
     public RESP getPending(int currentPage, int pageSize) {
@@ -58,6 +71,32 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
             // 将该补签单的所有管理员通知标记为已读
             notificationDao.markAllReadByBizId(String.valueOf(id));
+
+            // 更新考勤记录并触发重算
+            try {
+                LocalDate signDate = LocalDate.parse(sign.getSign_date());
+                Integer empId = sign.getNumber();
+
+                Attendance attendance = attendanceDao.selectByEmpAndDate(empId, signDate);
+                if (attendance == null) {
+                    attendanceDao.insertOrUpdate(empId, signDate, TodayStatus.NOT_CHECKED_IN);
+                    attendance = new Attendance();
+                    attendance.setEmpId(empId);
+                    attendance.setDate(signDate);
+                }
+
+                if ("a".equals(sign.getType())) {
+                    attendance.setCheckInTime(LocalDateTime.of(signDate, LocalTime.of(9, 0)));
+                } else if ("p".equals(sign.getType())) {
+                    attendance.setCheckOutTime(LocalDateTime.of(signDate, LocalTime.of(18, 0)));
+                }
+
+                attendanceDao.updateCheckTime(attendance);
+                recalculateAttendanceService.recalculate(empId, signDate);
+            } catch (Exception e) {
+                // 考勤更新失败不应阻塞审批流程，仅记录日志
+                e.printStackTrace();
+            }
         }
 
         return RESP.ok("操作成功");
