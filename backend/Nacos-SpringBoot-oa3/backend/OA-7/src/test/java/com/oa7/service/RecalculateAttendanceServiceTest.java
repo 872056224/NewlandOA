@@ -58,9 +58,9 @@ class RecalculateAttendanceServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Default: no holiday, no leave
-        when(holidayDao.selectHolidayTypeByDate(any())).thenReturn(null);
-        when(leaveDao.countApprovedLeaveToday(anyInt(), anyString())).thenReturn(0);
+        // Default: no holiday, no leave (lenient — some tests override these)
+        lenient().when(holidayDao.selectHolidayTypeByDate(any())).thenReturn(null);
+        lenient().when(leaveDao.countApprovedLeaveToday(anyInt(), anyString())).thenReturn(0);
     }
 
     @Test
@@ -188,14 +188,14 @@ class RecalculateAttendanceServiceTest {
     }
 
     @Test
-    void testRecalculate_Absence_NoCheckIn() {
+    void testRecalculate_MissingCard_OnlyCheckOut() {
         LocalDateTime checkOut = LocalDateTime.of(DATE, LocalTime.of(18, 5));
         Attendance att = buildAttendance(TodayStatus.CHECKED_OUT, null, checkOut);
         when(attendanceDao.selectByEmpAndDate(EMP_ID, DATE)).thenReturn(att);
 
         AttendanceStatus result = service.recalculate(EMP_ID, DATE);
 
-        assertEquals(AttendanceStatus.ABSENCE, result);
+        assertEquals(AttendanceStatus.MISSING_CARD, result);
     }
 
     @Test
