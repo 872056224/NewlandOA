@@ -315,8 +315,10 @@ public class StatisticsController {
         int totalMissingDuration = 0;  // 累计缺时时长（分钟）
 
         for (Attendance record : records) {
-            // 实时计算缺时时长（不依赖结算后存储的字段）
-            if (record.getCheckInTime() != null && record.getCheckOutTime() != null) {
+            // 请假/节假日不计算缺时
+            boolean isLeave = (record.getTodayStatus() == TodayStatus.LEAVE)
+                || (record.getAttendanceStatus() == AttendanceStatus.LEAVE);
+            if (!isLeave && record.getCheckInTime() != null && record.getCheckOutTime() != null) {
                 totalMissingDuration += computeDailyMissingDuration(
                     record.getCheckInTime().toLocalTime(),
                     record.getCheckOutTime().toLocalTime());

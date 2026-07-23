@@ -101,11 +101,17 @@ public class RecalculateAttendanceService {
 
         AttendanceStatus finalStatus = determineFinalStatus(att, holidayType, empId, date);
 
-        // 更新数据库 — 传枚举值，由 MyBatisEnumTypeHandler 转换为字符串
+        // 更新数据库
         attendanceDao.updateAttendanceStatus(att.getId(), finalStatus);
 
-        // 计算并更新缺时时长（核心工作时间 09:00-18:00 未覆盖部分, 扣30分钟容差）
-        int missingMin = computeMissingDuration(att);
+        // 计算并更新缺时时长
+        // 请假/节假日/休息日 → 缺时为 0
+        int missingMin = 0;
+        if (finalStatus != AttendanceStatus.LEAVE
+            && finalStatus != AttendanceStatus.HOLIDAY
+            && finalStatus != AttendanceStatus.REST_DAY) {
+            missingMin = computeMissingDuration(att);
+        }
         attendanceDao.updateMissingDuration(att.getId(), missingMin);
 
         log.debug("考勤重算：员工 {} 日期 {} 状态 => {}, 缺时 {}min", empId, date, finalStatus, missingMin);

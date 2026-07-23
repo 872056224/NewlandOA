@@ -154,6 +154,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, start, end);
         int totalMinutes = 0;
         for (Attendance a : records) {
+            // 跳过请假（todayStatus = LEAVE）
+            if (a.getTodayStatus() == com.oa2.constant.TodayStatus.LEAVE) continue;
             if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
                 totalMinutes += computeMissingDuration(
                     a.getCheckInTime().toLocalTime(),
