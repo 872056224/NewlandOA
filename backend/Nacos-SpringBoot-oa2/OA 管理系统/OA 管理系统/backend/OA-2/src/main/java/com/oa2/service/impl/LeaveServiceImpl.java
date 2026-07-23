@@ -1,8 +1,6 @@
 package com.oa2.service.impl;
 
-import com.oa2.constant.TodayStatus;
 import com.oa2.dao.AdminDao;
-import com.oa2.dao.AttendanceDao;
 import com.oa2.dao.LeaveDao;
 import com.oa2.pojo.Leave;
 import com.oa2.service.LeaveService;
@@ -28,9 +26,6 @@ public class LeaveServiceImpl implements LeaveService {
     @Autowired
     private AdminDao adminDao;
 
-    @Autowired
-    private AttendanceDao attendanceDao;
-
     @Override
     public RESP apply(int number, String name, String deptName, String type,
                       String startDate, String endDate, String reason, String duration) {
@@ -48,25 +43,8 @@ public class LeaveServiceImpl implements LeaveService {
 
         int ret = leaveDao.insert(leave);
         if (ret > 0) {
-            // 全天请假 → 更新对应日期的 attendance today_status = LEAVE
-            if ("FULL_DAY".equals(leave.getDuration())) {
-                try {
-                    LocalDate sd = LocalDate.parse(startDate.substring(0, 10));
-                    LocalDate ed = LocalDate.parse(endDate.substring(0, 10));
-                    for (LocalDate d = sd; !d.isAfter(ed); d = d.plusDays(1)) {
-                        attendanceDao.updateTodayStatus(number, d, TodayStatus.LEAVE);
-                    }
-                } catch (Exception e) {
-                    // 日期解析失败不影响主流程
-                }
-            } else if ("HALF_DAY_AM".equals(leave.getDuration()) || "HALF_DAY_PM".equals(leave.getDuration())) {
-                try {
-                    LocalDate d = LocalDate.parse(startDate.substring(0, 10));
-                    attendanceDao.updateTodayStatus(number, d, TodayStatus.LEAVE);
-                } catch (Exception e) {
-                    // 静默处理
-                }
-            }
+            // 注意：请假审批通过后才更新 attendance.today_status = LEAVE
+            // 审批逻辑在 OA-7 LeaveServiceImpl.approve() 中通过考勤重算处理
 
             // 通知所有管理员
             notifyAdmins("leave_submitted", "新请假申请",

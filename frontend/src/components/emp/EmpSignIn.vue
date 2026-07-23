@@ -467,7 +467,7 @@ const getTodaySignData = async () => {
       const eveningRecord = {
         type: 'p',
         signDate: d.checkOutTime || `${today} 18:00:00`,
-        state: status === 'CHECKED_OUT' ? '已签到' : (hasCheckedIn ? '未签到' : '--'),
+        state: status === '已签退' ? '已签到' : (hasCheckedIn ? '未签到' : '--'),
         disabled: !hasCheckedIn,
         number: 0,
         name: '',
