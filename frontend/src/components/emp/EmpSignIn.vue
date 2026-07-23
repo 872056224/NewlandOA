@@ -268,12 +268,45 @@ const retroactiveForm = reactive({
   reason: ''
 })
 
-// 限制补签日期只能在当月1日至今天
+// 当月可补签的日期集合（异常或缺勤的天数）
+const retroEligibleDates = ref<Set<string>>(new Set())
+
+// 限制补签日期只可选异常或缺勤的天数
 const disableRetroDate = (time: Date) => {
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-  return time.getTime() < startOfMonth.getTime() || time.getTime() > todayEnd.getTime()
+  const key = `${time.getFullYear()}-${String(time.getMonth()+1).padStart(2,'0')}-${String(time.getDate()).padStart(2,'0')}`
+  return !retroEligibleDates.value.has(key)
+}
+
+// 打开补签弹窗时加载当月可补签日期
+const openRetroactiveDialog = async () => {
+  showRetroactiveDialog.value = true
+  // 默认选中今天
+  const d = new Date()
+  retroactiveForm.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  // 加载当月考勤记录，找出异常或未签到的日期
+  try {
+    const resp = await axios.get('/api/v1/employee/attendance/history', {
+      params: { currentPage: 1, pageSize: 31 }
+    })
+    if (resp.data?.data) {
+      const dates = new Set<string>()
+      for (const r of resp.data.data) {
+        // 只取当月的数据
+        if (!r.date || !r.date.startsWith(currentYearMonth.value)) continue
+        // 异常（签到无签退）或缺勤（完全没打卡）→ 可补签
+        if (r.todayStatus === '签到异常' || r.todayStatus === '未签到') {
+          dates.add(r.date)
+        }
+      }
+      retroEligibleDates.value = dates
+      // 如果当前选中的日期不可补签，清空
+      if (!dates.has(retroactiveForm.date)) {
+        retroactiveForm.date = ''
+      }
+    }
+  } catch (e) {
+    console.warn('加载可补签日期失败:', e)
+  }
 }
 
 // 定时器
@@ -647,16 +680,6 @@ async function loadEmployeeMissingDuration() {
   } catch (e) {
     console.warn('Failed to load missing duration:', e)
   }
-}
-
-// 打开补签对话框（默认选中今天）
-const openRetroactiveDialog = () => {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  retroactiveForm.date = `${y}-${m}-${d}`
-  showRetroactiveDialog.value = true
 }
 
 // 提交补签申请
