@@ -90,12 +90,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<String, Object> data = new LinkedHashMap<>();
         if (att == null) {
-            // 当天没有记录（凌晨定时任务还没跑或员工未处理）
             data.put("todayStatus", TodayStatus.NOT_CHECKED_IN);
             data.put("checkInTime", null);
             data.put("checkOutTime", null);
         } else {
-            data.put("todayStatus", att.getTodayStatus());
+            data.put("todayStatus", resolveDisplayStatus(att, today));
             data.put("checkInTime", att.getCheckInTime() != null ? att.getCheckInTime().toString() : null);
             data.put("checkOutTime", att.getCheckOutTime() != null ? att.getCheckOutTime().toString() : null);
             data.put("checkInAddress", att.getCheckInAddress());
@@ -115,7 +114,26 @@ public class AttendanceServiceImpl implements AttendanceService {
         int offset = (currentPage - 1) * pageSize;
         List<Attendance> list = attendanceDao.selectByEmpPage(empId, offset, pageSize);
         int total = attendanceDao.countByEmp(empId);
+        // 为历史记录计算正确的显示状态
+        for (Attendance att : list) {
+            att.setTodayStatus(resolveDisplayStatus(att, att.getDate()));
+        }
         return RESP.ok(list, currentPage, total);
+    }
+
+    /**
+     * 判断考勤记录的显示状态：
+     * - 当天：用原有 todayStatus
+     * - 历史：仅有签到无签退 → 异常
+     */
+    private TodayStatus resolveDisplayStatus(Attendance att, LocalDate date) {
+        if (att.getDate() != null && !att.getDate().equals(LocalDate.now())) {
+            // 历史记录：有签到无签退 → 异常
+            if (att.getCheckInTime() != null && att.getCheckOutTime() == null) {
+                return TodayStatus.ANOMALY;
+            }
+        }
+        return att.getTodayStatus() != null ? att.getTodayStatus() : TodayStatus.NOT_CHECKED_IN;
     }
 
     /** 解析地址 */

@@ -78,6 +78,74 @@ public class StatisticsController {
     }
 
     /**
+     * 个人月度考勤明细（含每日记录）
+     *
+     * @param empId     员工编号
+     * @param yearMonth 年月 (YYYY-MM)，默认当月
+     */
+    @GetMapping("/personal/monthly-detail")
+    public RESP personalMonthlyDetail(@RequestParam int empId,
+                                       @RequestParam(required = false) String yearMonth) {
+        if (yearMonth == null || yearMonth.isEmpty()) {
+            yearMonth = YearMonth.now().toString();
+        }
+
+        // 获取月度汇总（复用 computePersonal）
+        MonthlyReport summary = computePersonal(empId, yearMonth);
+        if (summary == null) {
+            return RESP.error("未找到该员工的考勤数据");
+        }
+
+        // 获取每日记录
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate monthStart = ym.atDay(1);
+        LocalDate monthEnd = ym.atEndOfMonth();
+        LocalDate today = LocalDate.now();
+        boolean isCurrentMonth = ym.equals(YearMonth.from(today));
+        LocalDate effectiveEnd = isCurrentMonth ? today : monthEnd;
+
+        // 获取节假日信息，确定工作日
+        List<Holiday> holidays = holidayDao.selectByDateRange(monthStart, effectiveEnd);
+        Set<LocalDate> workdaySet = holidays.stream()
+            .filter(h -> "WORKDAY".equals(h.getType()))
+            .map(h -> h.getDate())
+            .collect(Collectors.toSet());
+
+        // 获取考勤记录
+        List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, monthStart, effectiveEnd);
+        Map<LocalDate, Attendance> recordMap = records.stream()
+            .collect(Collectors.toMap(Attendance::getDate, r -> r, (a,b) -> a));
+
+        // 构建每日列表（仅工作日）
+        List<Map<String, Object>> dailyList = new ArrayList<>();
+        for (LocalDate date = monthStart; !date.isAfter(effectiveEnd); date = date.plusDays(1)) {
+            if (!workdaySet.contains(date)) continue; // 跳过非工作日
+            Attendance rec = recordMap.get(date);
+            Map<String, Object> day = new LinkedHashMap<>();
+            day.put("date", date.toString());
+            day.put("checkIn", rec != null && rec.getCheckInTime() != null ? rec.getCheckInTime().toString() : null);
+            day.put("checkOut", rec != null && rec.getCheckOutTime() != null ? rec.getCheckOutTime().toString() : null);
+            day.put("missingDuration", rec != null && rec.getMissingDuration() != null ? rec.getMissingDuration() : 0);
+            // 确定显示状态
+            String status;
+            if (rec == null || rec.getCheckInTime() == null) {
+                status = "未签到";
+            } else if (rec.getCheckOutTime() == null) {
+                status = "异常";
+            } else {
+                status = "已签到";
+            }
+            day.put("status", status);
+            dailyList.add(day);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("summary", summary);
+        result.put("dailyRecords", dailyList);
+        return RESP.ok(result);
+    }
+
+    /**
      * 部门月度考勤统计总和
      *
      * @param deptId    部门ID

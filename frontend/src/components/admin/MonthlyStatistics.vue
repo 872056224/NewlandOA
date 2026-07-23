@@ -39,7 +39,7 @@
                 placeholder="选择月份"
                 value-format="YYYY-MM"
                 class="apple-input month-picker"
-                @change="loadMonthlyTrend"
+                @change="onOverviewMonthChange"
               />
             </div>
             <el-button
@@ -180,62 +180,79 @@
               <el-icon><InfoFilled /></el-icon>
               <span>请选择员工和月份后点击"查询"</span>
             </div>
-            <el-table
-              v-else
-              :data="[monthlyData]"
-              v-loading="monthlyLoading"
-              stripe
-              style="width: 100%"
-              empty-text="暂无数据"
-            >
-              <el-table-column prop="empId" label="员工编号" width="100" />
-              <el-table-column prop="empName" label="姓名" width="100" />
-              <el-table-column label="应出勤天数" width="120">
-                <template #default="{ row }">
-                  {{ row.workDays != null ? row.workDays : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="实际出勤" width="100">
-                <template #default="{ row }">
-                  {{ row.actualDays != null ? row.actualDays : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="迟到" width="80">
-                <template #default="{ row }">
-                  {{ row.lateCount != null ? row.lateCount : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="早退" width="80">
-                <template #default="{ row }">
-                  {{ row.earlyCount != null ? row.earlyCount : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="请假" width="80">
-                <template #default="{ row }">
-                  {{ row.leaveCount != null ? row.leaveCount : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="旷工" width="80">
-                <template #default="{ row }">
-                  {{ row.absenceCount != null ? row.absenceCount : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="缺卡" width="80">
-                <template #default="{ row }">
-                  {{ row.missingCardCount != null ? row.missingCardCount : '--' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="出勤率(%)" min-width="110">
-                <template #default="{ row }">
-                  <el-tag
-                    :type="attendanceRateType(row.attendanceRate)"
-                    size="small"
-                  >
-                    {{ row.attendanceRate != null ? row.attendanceRate : '--' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div v-else>
+              <!-- Personal Info Header -->
+              <div class="personal-summary-header">
+                <el-descriptions :column="4" border size="small">
+                  <el-descriptions-item label="姓名">{{ monthlyData.empName || '--' }}</el-descriptions-item>
+                  <el-descriptions-item label="员工编号">{{ monthlyData.empId || '--' }}</el-descriptions-item>
+                  <el-descriptions-item label="年份月份">{{ monthlyData.yearMonth || monthlyYearMonth }}</el-descriptions-item>
+                  <el-descriptions-item label="出勤率">
+                    <el-tag :type="attendanceRateType(monthlyData.attendanceRate)" size="small">
+                      {{ monthlyData.attendanceRate != null ? monthlyData.attendanceRate + '%' : '--' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                </el-descriptions>
+              </div>
+              <!-- Daily Detail Table -->
+              <el-table
+                :data="monthlyDailyRecords"
+                v-loading="monthlyLoading"
+                stripe
+                style="width: 100%; margin-top: 16px;"
+                empty-text="暂无每日记录"
+              >
+                <el-table-column prop="date" label="日期" width="120" />
+                <el-table-column label="签到时间" width="120">
+                  <template #default="{ row }">
+                    {{ formatTime(row.checkIn) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="签退时间" width="120">
+                  <template #default="{ row }">
+                    {{ formatTime(row.checkOut) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="80" align="center">
+                  <template #default="{ row }">
+                    <el-tag
+                      :type="row.status === '已签到' ? 'success' : row.status === '异常' ? 'warning' : 'danger'"
+                      size="small"
+                    >
+                      {{ row.status }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="missingDuration" label="缺时(分钟)" width="100" align="center">
+                  <template #default="{ row }">
+                    <span :class="row.missingDuration > 0 ? 'color-danger' : 'color-success'">
+                      {{ row.missingDuration != null ? row.missingDuration : 0 }}
+                    </span>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <!-- Summary Row -->
+              <div class="monthly-summary-bar" v-if="monthlyDailyRecords.length > 0">
+                <div class="summary-stat">
+                  <span class="summary-stat-label">工作日</span>
+                  <span class="summary-stat-value">{{ monthlyData.workDays ?? '--' }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">出勤天数</span>
+                  <span class="summary-stat-value">{{ monthlyData.actualDays ?? '--' }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">累计缺时(分钟)</span>
+                  <span class="summary-stat-value">{{ monthlyData.missingDuration ?? 0 }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">出勤率</span>
+                  <span class="summary-stat-value" :class="rateColor(monthlyData.attendanceRate)">
+                    {{ monthlyData.attendanceRate != null ? monthlyData.attendanceRate + '%' : '--' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </el-card>
         </div>
       </el-tab-pane>
@@ -318,31 +335,11 @@
                 </div>
               </div>
 
-              <!-- Detail Table -->
-              <el-table
-                :data="deptStatsData.details || []"
-                v-loading="deptLoading"
-                stripe
-                style="width: 100%; margin-top: 16px;"
-                empty-text="暂无明细数据"
-              >
-                <el-table-column prop="empId" label="员工编号" width="100" />
-                <el-table-column prop="empName" label="姓名" width="100" />
-                <el-table-column prop="workDays" label="应出勤" width="80" />
-                <el-table-column prop="actualDays" label="实际出勤" width="80" />
-                <el-table-column prop="lateCount" label="迟到" width="70" />
-                <el-table-column prop="earlyCount" label="早退" width="70" />
-                <el-table-column prop="leaveCount" label="请假" width="70" />
-                <el-table-column prop="absenceCount" label="旷工" width="70" />
-                <el-table-column prop="missingCardCount" label="缺卡" width="70" />
-                <el-table-column label="出勤率" width="90">
-                  <template #default="{ row }">
-                    <span :class="rateColor(row.attendanceRate)">
-                      {{ row.attendanceRate != null ? row.attendanceRate + '%' : '--' }}
-                    </span>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <!-- Pie Chart -->
+              <div id="deptPieChart" ref="deptChartContainer" style="width:100%;height:350px;margin-top:8px;"></div>
+              <div v-if="deptLoading" class="chart-empty">
+                <p>加载中...</p>
+              </div>
             </template>
           </el-card>
         </div>
@@ -353,7 +350,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
   DataAnalysis, Refresh, Search, Files, InfoFilled, DocumentRemove
 } from '@element-plus/icons-vue'
@@ -394,6 +391,7 @@ const monthlyEmpId = ref<number | null>(null)
 const monthlyLoading = ref(false)
 const generating = ref(false)
 const monthlyData = ref<any>(null)
+const monthlyDailyRecords = ref<any[]>([])
 const employeeList = ref<any[]>([])
 
 // Department tab
@@ -402,6 +400,10 @@ const deptId = ref<number | null>(null)
 const deptLoading = ref(false)
 const deptStatsData = ref<any>(null)
 const departmentList = ref<any[]>([])
+
+// Department pie chart
+const deptChartContainer = ref<HTMLElement>()
+let deptPieChart: echarts.ECharts | null = null
 
 // ─── Helpers ───
 
@@ -422,6 +424,12 @@ function rateClass2(signed: number, expected: number): string {
   if (rate >= 90) return 'rate-high'
   if (rate >= 70) return 'rate-mid'
   return 'rate-low'
+}
+
+function formatTime(isoStr: string | null): string {
+  if (!isoStr) return '--'
+  const parts = isoStr.split('T')
+  return parts.length > 1 ? parts[1].substring(0, 5) : isoStr
 }
 
 function attendanceRateType(rate: any): string {
@@ -544,6 +552,51 @@ function initBarChart() {
   window.addEventListener('resize', () => barChart?.resize())
 }
 
+function initDeptPieChart() {
+  if (!deptChartContainer.value) return
+  deptPieChart = echarts.init(deptChartContainer.value)
+  const option = {
+    title: { text: '出勤率分布', left: 'center', textStyle: { color: '#1D1D1F', fontSize: 16 } },
+    tooltip: { trigger: 'item', formatter: '{b}: {c}人 ({d}%)' },
+    legend: { bottom: 0, textStyle: { color: '#86868B' } },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '65%'],
+      center: ['50%', '45%'],
+      avoidLabelOverlap: false,
+      label: { show: true, formatter: '{b}\n{c}人', color: '#1D1D1F' },
+      emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+      data: []
+    }]
+  }
+  deptPieChart.setOption(option)
+  window.addEventListener('resize', () => deptPieChart?.resize())
+}
+
+function updateDeptPieChart() {
+  if (!deptPieChart || !deptStatsData.value) return
+  const details = deptStatsData.value.details || []
+  // Categorize by attendance rate
+  let excellent = 0, good = 0, fair = 0, poor = 0
+  details.forEach((r: any) => {
+    const rate = r.attendanceRate != null ? parseFloat(r.attendanceRate) : 0
+    if (rate >= 90) excellent++
+    else if (rate >= 80) good++
+    else if (rate >= 60) fair++
+    else poor++
+  })
+  deptPieChart.setOption({
+    series: [{
+      data: [
+        { value: excellent, name: '优秀(>=90%)', itemStyle: { color: '#34C759' } },
+        { value: good, name: '良好(>=80%)', itemStyle: { color: '#0071E3' } },
+        { value: fair, name: '合格(>=60%)', itemStyle: { color: '#FF9500' } },
+        { value: poor, name: '不合格(<60%)', itemStyle: { color: '#FF3B30' } }
+      ]
+    }]
+  })
+}
+
 async function loadRecentStats() {
   barLoading.value = true
   barEmpty.value = false
@@ -579,13 +632,18 @@ async function loadDailyStats() {
   try {
     const response = await axios.get('/api/v1/admin/attendance/daily-statistics', {
       params: {
-        currentPage: dailyPage.value,
-        pageSize: dailyPageSize.value
+        currentPage: 1,
+        pageSize: 100
       }
     })
     if (response.data && response.data.data) {
-      dailyStats.value = response.data.data || []
-      dailyTotal.value = response.data.total || 0
+      let allStats = response.data.data || []
+      // Filter by selected month for overview
+      if (trendMonth.value) {
+        allStats = allStats.filter((d: any) => d.date && d.date.startsWith(trendMonth.value))
+      }
+      dailyStats.value = allStats
+      dailyTotal.value = allStats.length
     } else {
       dailyStats.value = []
       dailyTotal.value = 0
@@ -636,25 +694,29 @@ async function loadMonthlyStats() {
   }
   monthlyLoading.value = true
   try {
-    const response = await axios.get('/api/v1/admin/statistics/personal/monthly', {
+    const response = await axios.get('/api/v1/admin/statistics/personal/monthly-detail', {
       params: {
         empId: monthlyEmpId.value,
         yearMonth: monthlyYearMonth.value
       }
     })
     if (response.data && response.data.data) {
-      monthlyData.value = response.data.data
+      monthlyData.value = response.data.data.summary
+      monthlyDailyRecords.value = response.data.data.dailyRecords || []
     } else if (response.data && response.data.code === 500) {
       ElMessage.warning(response.data.message || '未找到该员工考勤数据')
       monthlyData.value = null
+      monthlyDailyRecords.value = []
     } else {
       ElMessage.warning('未找到该员工考勤数据')
       monthlyData.value = null
+      monthlyDailyRecords.value = []
     }
   } catch (error) {
     console.error('加载月度统计失败:', error)
     ElMessage.error('获取月度统计失败')
     monthlyData.value = null
+    monthlyDailyRecords.value = []
   } finally {
     monthlyLoading.value = false
   }
@@ -689,6 +751,11 @@ function onEmpSelectChange(val: number | null) {
   }
 }
 
+function onOverviewMonthChange() {
+  loadMonthlyTrend()
+  loadDailyStats()
+}
+
 // ─── Department Stats ───
 
 async function loadDeptStats() {
@@ -706,6 +773,7 @@ async function loadDeptStats() {
     })
     if (response.data && response.data.data) {
       deptStatsData.value = response.data.data
+      nextTick(() => updateDeptPieChart())
     } else if (response.data && response.data.code === 500) {
       ElMessage.warning(response.data.message || '未找到该部门考勤数据')
       deptStatsData.value = null
@@ -736,6 +804,7 @@ onMounted(async () => {
   await nextTick()
   initChart()
   initBarChart()
+  initDeptPieChart()
   loadMonthlyTrend()
   loadRecentStats()
   loadDailyStats()
@@ -744,11 +813,11 @@ onMounted(async () => {
 })
 
 // 切换标签页时初始化对应图表
-import { watch } from 'vue'
 watch(activeTab, (tab) => {
   nextTick(() => {
     if (tab === 'recent' && barChart) { barChart.resize() }
     if (tab === 'overview' && myChart) { myChart.resize() }
+    if (tab === 'department' && deptPieChart) { deptPieChart.resize() }
   })
 })
 </script>
@@ -946,6 +1015,43 @@ watch(activeTab, (tab) => {
   padding: 48px 0;
   color: var(--apple-text-secondary);
   font-size: 15px;
+}
+
+/* ─── Personal Monthly Summary ─── */
+.personal-summary-header {
+  margin-bottom: 8px;
+}
+
+.personal-summary-header :deep(.el-descriptions__title) {
+  font-size: 14px;
+}
+
+.monthly-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--apple-bg);
+  border-radius: var(--apple-radius);
+}
+
+.summary-stat {
+  text-align: center;
+}
+
+.summary-stat-label {
+  display: block;
+  font-size: 12px;
+  color: var(--apple-text-secondary);
+  margin-bottom: 4px;
+}
+
+.summary-stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--apple-text);
 }
 
 /* ─── Department Summary Grid ─── */
