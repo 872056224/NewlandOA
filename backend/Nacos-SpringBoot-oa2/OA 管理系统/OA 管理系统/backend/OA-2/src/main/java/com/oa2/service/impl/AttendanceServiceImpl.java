@@ -136,6 +136,22 @@ public class AttendanceServiceImpl implements AttendanceService {
         return att.getTodayStatus() != null ? att.getTodayStatus() : TodayStatus.NOT_CHECKED_IN;
     }
 
+    @Override
+    public RESP getMonthlyMissingDuration(int empId, String yearMonth) {
+        java.time.YearMonth ym = java.time.YearMonth.parse(yearMonth);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+        if (ym.equals(java.time.YearMonth.now())) {
+            end = LocalDate.now();
+        }
+        int totalMinutes = attendanceDao.sumMissingDurationByMonth(empId, start, end);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("empId", empId);
+        result.put("yearMonth", yearMonth);
+        result.put("totalMinutes", totalMinutes);
+        return RESP.ok(result);
+    }
+
     /** 解析地址 */
     private String resolveAddress(String coordinates) {
         if (coordinates != null && !coordinates.isEmpty()) {

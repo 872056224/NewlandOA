@@ -11,4 +11,6 @@ public interface AttendanceService {
     RESP getTodayStatus(int empId);
     /** 获取历史考勤记录（分页） */
     RESP getHistory(int empId, int currentPage, int pageSize);
+
+    RESP getMonthlyMissingDuration(int empId, String yearMonth);
 }

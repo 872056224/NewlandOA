@@ -37,27 +37,55 @@ public class SignServiceImpl implements SignService {
     /** 核心工作时间 09:00 - 18:00 */
     private static final LocalTime CORE_START = LocalTime.of(9, 0);
     private static final LocalTime CORE_END = LocalTime.of(18, 0);
-    /** 缺时容差（分钟） */
-    private static final long MAX_MISSING_MINUTES = 30;
+    /** 缺时宽限默认（分钟） */
+    private static final int DEFAULT_TOLERANCE = 30;
+
+    @Autowired
+    private com.oa7.service.AttendanceRuleService attendanceRuleService;
 
     private int getTotalEmployeeCount() {
         return empDao.countUser();
     }
 
     /**
-     * 计算缺时时长：核心工作时间 09:00-18:00 内未覆盖的部分
-     * 扣减容差30分钟后仍>0则算缺时
+     * 获取缺时宽限（从考勤规则读取）
      */
-    private long calcMissingMinutes(LocalTime checkIn, LocalTime checkOut) {
+    private int getToleranceMinutes() {
+        try {
+            com.oa7.pojo.AttendanceRule rule = attendanceRuleService.getDefaultRule();
+            if (rule != null && rule.getMissingToleranceMin() != null) {
+                return rule.getMissingToleranceMin();
+            }
+        } catch (Exception e) {
+            // 使用默认值
+        }
+        return DEFAULT_TOLERANCE;
+    }
+
+    /**
+     * 计算缺时时长（与 RecalculateAttendanceService 一致的逻辑）
+     *
+     * ① 缺时X > 宽限 → 全记
+     * ② 缺时X ≤ 宽限 AND 加班 > 宽限 → 全抵
+     * ③ 缺时X ≤ 宽限 AND 加班 ≤ 宽限 → max(0, 缺时X - 加班)
+     */
+    private int calcMissingMinutes(LocalTime checkIn, LocalTime checkOut) {
         if (checkIn == null || checkOut == null) return 0;
-        long missing = 0;
+        long missingX = 0;
         if (checkIn.isAfter(CORE_START)) {
-            missing += Duration.between(CORE_START, checkIn).toMinutes();
+            missingX += Duration.between(CORE_START, checkIn).toMinutes();
         }
         if (checkOut.isBefore(CORE_END)) {
-            missing += Duration.between(checkOut, CORE_END).toMinutes();
+            missingX += Duration.between(checkOut, CORE_END).toMinutes();
         }
-        return Math.max(0, missing - MAX_MISSING_MINUTES);
+        long totalMinutes = Duration.between(checkIn, checkOut).toMinutes();
+        long coreMinutes = Duration.between(CORE_START, CORE_END).toMinutes();
+        long overtime = Math.max(0, totalMinutes - coreMinutes);
+        int tolerance = getToleranceMinutes();
+
+        if (missingX > tolerance) return (int) missingX;        // ①
+        if (overtime > tolerance) return 0;                     // ②
+        return (int) Math.max(0, missingX - overtime);          // ③
     }
 
     /** 打卡成功 = 签到 + 签退 都有 */
@@ -100,15 +128,14 @@ public class SignServiceImpl implements SignService {
 
             int signed = 0;          // 签到+签退齐全
             int anomaly = 0;          // 打卡异常（仅签到无签退）
-            int missingDuration = 0; // 缺时人数（完整打卡但核心时间覆盖不足）
+            int missingDuration = 0; // 当日缺时总分钟数
 
             for (Attendance a : records) {
                 if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
                     signed++;
-                    if (calcMissingMinutes(a.getCheckInTime().toLocalTime(),
-                                           a.getCheckOutTime().toLocalTime()) > 0) {
-                        missingDuration++;
-                    }
+                    missingDuration += calcMissingMinutes(
+                        a.getCheckInTime().toLocalTime(),
+                        a.getCheckOutTime().toLocalTime());
                 } else if (a.getCheckInTime() != null) {
                     anomaly++;
                 }
@@ -145,14 +172,13 @@ public class SignServiceImpl implements SignService {
 
         int signed = 0;
         int anomaly = 0;
-        int missingDuration = 0;
+        int missingDuration = 0; // 当日缺时总分钟数
         for (Attendance a : records) {
             if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
                 signed++;
-                if (calcMissingMinutes(a.getCheckInTime().toLocalTime(),
-                                       a.getCheckOutTime().toLocalTime()) > 0) {
-                    missingDuration++;
-                }
+                missingDuration += calcMissingMinutes(
+                    a.getCheckInTime().toLocalTime(),
+                    a.getCheckOutTime().toLocalTime());
             } else if (a.getCheckInTime() != null) {
                 anomaly++;
             }

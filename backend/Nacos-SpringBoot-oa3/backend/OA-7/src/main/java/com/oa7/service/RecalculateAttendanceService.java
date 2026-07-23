@@ -207,12 +207,31 @@ public class RecalculateAttendanceService {
     /** 核心工作时间 09:00-18:00 */
     private static final LocalTime CORE_START = LocalTime.of(9, 0);
     private static final LocalTime CORE_END = LocalTime.of(18, 0);
-    /** 容差分钟数 */
-    private static final long TOLERANCE_MINUTES = 30;
+    /** 缺时宽限默认值（分钟） */
+    private static final int DEFAULT_TOLERANCE = 30;
 
     /**
-     * 计算缺时时长：核心工作时间 09:00-18:00 内未覆盖的部分
-     * 迟到/早退各扣30分钟容差，总和仍为正则记录
+     * 获取缺时宽限（从考勤规则读取）
+     */
+    private int getToleranceMinutes() {
+        try {
+            AttendanceRule rule = attendanceRuleService.getDefaultRule();
+            if (rule != null && rule.getMissingToleranceMin() != null) {
+                return rule.getMissingToleranceMin();
+            }
+        } catch (Exception e) {
+            log.warn("读取缺时宽限失败，使用默认值", e);
+        }
+        return DEFAULT_TOLERANCE;
+    }
+
+    /**
+     * 计算缺时时长
+     *
+     * 规则：
+     * ① 缺时X > 宽限 → 全记入
+     * ② 缺时X ≤ 宽限 AND 加班时长 > 宽限 → 全抵（记0）
+     * ③ 缺时X ≤ 宽限 AND 加班时长 ≤ 宽限 → 记 max(0, 缺时X - 加班时长)
      */
     private int computeMissingDuration(Attendance att) {
         if (att.getCheckInTime() == null || att.getCheckOutTime() == null) {
@@ -221,15 +240,34 @@ public class RecalculateAttendanceService {
         LocalTime checkIn = att.getCheckInTime().toLocalTime();
         LocalTime checkOut = att.getCheckOutTime().toLocalTime();
 
-        long missing = 0;
+        // 迟到+早退分钟
+        long missingX = 0;
         if (checkIn.isAfter(CORE_START)) {
-            missing += java.time.Duration.between(CORE_START, checkIn).toMinutes();
+            missingX += Duration.between(CORE_START, checkIn).toMinutes();
         }
         if (checkOut.isBefore(CORE_END)) {
-            missing += java.time.Duration.between(checkOut, CORE_END).toMinutes();
+            missingX += Duration.between(checkOut, CORE_END).toMinutes();
         }
-        // 扣减容差
-        missing = Math.max(0, missing - TOLERANCE_MINUTES);
-        return (int) Math.min(missing, Integer.MAX_VALUE);
+
+        // 加班时长 = 总工时 - 核心工时
+        long totalMinutes = Duration.between(checkIn, checkOut).toMinutes();
+        long coreMinutes = Duration.between(CORE_START, CORE_END).toMinutes(); // 540min
+        long overtime = Math.max(0, totalMinutes - coreMinutes);
+
+        int tolerance = getToleranceMinutes();
+
+        // ① 超过宽限 → 全记
+        if (missingX > tolerance) {
+            return (int) Math.min(missingX, Integer.MAX_VALUE);
+        }
+
+        // ② 没超过宽限，但加班够多 → 全抵
+        if (overtime > tolerance) {
+            return 0;
+        }
+
+        // ③ 没超过宽限，加班也不够 → 抵多少算多少
+        long result = Math.max(0, missingX - overtime);
+        return (int) Math.min(result, Integer.MAX_VALUE);
     }
 }

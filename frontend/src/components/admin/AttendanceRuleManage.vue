@@ -32,8 +32,7 @@
           {{ formatTime(row.workEndTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="迟到宽限(分)" prop="lateThresholdMin" min-width="120" align="center" />
-      <el-table-column label="早退宽限(分)" prop="earlyThresholdMin" min-width="120" align="center" />
+      <el-table-column label="缺时宽限(分)" prop="missingToleranceMin" min-width="120" align="center" />
       <el-table-column label="状态" min-width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="row.enabled ? 'success' : 'danger'" size="small">
@@ -107,17 +106,9 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="迟到宽限(分)" prop="lateThresholdMin">
+        <el-form-item label="缺时宽限(分)" prop="missingToleranceMin">
           <el-input-number
-            v-model="formData.lateThresholdMin"
-            :min="0"
-            :max="120"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="早退宽限(分)" prop="earlyThresholdMin">
-          <el-input-number
-            v-model="formData.earlyThresholdMin"
+            v-model="formData.missingToleranceMin"
             :min="0"
             :max="120"
             style="width: 100%"
@@ -154,8 +145,7 @@ interface RuleItem {
   deptId: number | null
   workStartTime: string  // "HH:mm" or array from backend
   workEndTime: string
-  lateThresholdMin: number
-  earlyThresholdMin: number
+  missingToleranceMin: number
   enabled: boolean
 }
 
@@ -180,8 +170,7 @@ const defaultForm = () => ({
   deptId: null as number | null,
   workStartTime: '09:00' as string | null,
   workEndTime: '18:00' as string | null,
-  lateThresholdMin: 0,
-  earlyThresholdMin: 0,
+  missingToleranceMin: 0,
   enabled: true
 })
 
@@ -268,8 +257,7 @@ function showEditDialog(row: RuleItem) {
   formData.deptId = row.deptId
   formData.workStartTime = formatTime(row.workStartTime)
   formData.workEndTime = formatTime(row.workEndTime)
-  formData.lateThresholdMin = row.lateThresholdMin ?? 0
-  formData.earlyThresholdMin = row.earlyThresholdMin ?? 0
+  formData.missingToleranceMin = row.missingToleranceMin ?? 0
   formData.enabled = row.enabled
   dialogVisible.value = true
 }
@@ -291,8 +279,7 @@ async function handleSave() {
       deptId: formData.deptId,
       workStartTime: timeToArray(formData.workStartTime),
       workEndTime: timeToArray(formData.workEndTime),
-      lateThresholdMin: formData.lateThresholdMin,
-      earlyThresholdMin: formData.earlyThresholdMin,
+      missingToleranceMin: formData.missingToleranceMin,
       enabled: formData.enabled
     }
 

@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -125,7 +127,12 @@ public class StatisticsController {
             day.put("date", date.toString());
             day.put("checkIn", rec != null && rec.getCheckInTime() != null ? rec.getCheckInTime().toString() : null);
             day.put("checkOut", rec != null && rec.getCheckOutTime() != null ? rec.getCheckOutTime().toString() : null);
-            day.put("missingDuration", rec != null && rec.getMissingDuration() != null ? rec.getMissingDuration() : 0);
+            // 实时计算缺时（不依赖结算字段）
+            int dailyMissing = 0;
+            if (rec != null && rec.getCheckInTime() != null && rec.getCheckOutTime() != null) {
+                dailyMissing = computeDailyMissingDuration(rec.getCheckInTime().toLocalTime(), rec.getCheckOutTime().toLocalTime());
+            }
+            day.put("missingDuration", dailyMissing);
             // 确定显示状态
             String status;
             if (rec == null || rec.getCheckInTime() == null) {
@@ -308,9 +315,11 @@ public class StatisticsController {
         int totalMissingDuration = 0;  // 累计缺时时长（分钟）
 
         for (Attendance record : records) {
-            // 累加缺时时长
-            if (record.getMissingDuration() != null && record.getMissingDuration() > 0) {
-                totalMissingDuration += record.getMissingDuration();
+            // 实时计算缺时时长（不依赖结算后存储的字段）
+            if (record.getCheckInTime() != null && record.getCheckOutTime() != null) {
+                totalMissingDuration += computeDailyMissingDuration(
+                    record.getCheckInTime().toLocalTime(),
+                    record.getCheckOutTime().toLocalTime());
             }
             if (record.getAttendanceStatus() != null) {
                 switch (record.getAttendanceStatus().name()) {
@@ -356,6 +365,34 @@ public class StatisticsController {
         report.setAttendanceRate(attendanceRate);
 
         return report;
+    }
+
+    /** 核心工作时间 */
+    private static final LocalTime CORE_START = LocalTime.of(9, 0);
+    private static final LocalTime CORE_END = LocalTime.of(18, 0);
+    private static final int MISSING_TOLERANCE = 30;
+
+    /**
+     * 实时计算单日缺时时长（与 RecalculateAttendanceService 一致）
+     * ① 缺时X > 宽限 → 全记
+     * ② 缺时X ≤ 宽限 AND 加班 > 宽限 → 全抵
+     * ③ 缺时X ≤ 宽限 AND 加班 ≤ 宽限 → max(0, 缺时X - 加班)
+     */
+    private int computeDailyMissingDuration(LocalTime checkIn, LocalTime checkOut) {
+        long missingX = 0;
+        if (checkIn.isAfter(CORE_START)) {
+            missingX += Duration.between(CORE_START, checkIn).toMinutes();
+        }
+        if (checkOut.isBefore(CORE_END)) {
+            missingX += Duration.between(checkOut, CORE_END).toMinutes();
+        }
+        long totalMinutes = Duration.between(checkIn, checkOut).toMinutes();
+        long coreMinutes = Duration.between(CORE_START, CORE_END).toMinutes();
+        long overtime = Math.max(0, totalMinutes - coreMinutes);
+
+        if (missingX > MISSING_TOLERANCE) return (int) missingX;
+        if (overtime > MISSING_TOLERANCE) return 0;
+        return (int) Math.max(0, missingX - overtime);
     }
 
     /**

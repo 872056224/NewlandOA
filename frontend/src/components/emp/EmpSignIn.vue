@@ -56,6 +56,16 @@
       </el-row>
     </div>
 
+    <!-- 本月缺时 -->
+    <div class="apple-card missing-card">
+      <div class="info-row">
+        <span class="info-label">本月缺时</span>
+        <span class="info-value" :class="employeeMissingMinutes > 0 ? 'text-warning' : 'text-success'">
+          {{ employeeMissingMinutes }} 分钟
+        </span>
+      </div>
+    </div>
+
     <!-- 最近签到记录 -->
     <div class="apple-card history-section">
       <div class="section-header">
@@ -242,6 +252,7 @@ const currentPage = ref(1)
 const pageSize = ref(8)
 const total = ref(0)
 const isOnLeave = ref(false)  // 今天是否有已批准的请假
+const employeeMissingMinutes = ref(0)
 
 // 补签相关
 const showRetroactiveDialog = ref(false)
@@ -284,6 +295,12 @@ const signInfo = reactive({
 // 计算属性
 const dialogTitle = computed(() => {
   return `${getSignTypeText(signInfo.type)}确认`
+})
+
+const currentYearMonth = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}
+`
 })
 
 // 时间格式化工具函数
@@ -624,6 +641,20 @@ const getLeaveStatus = async () => {
   }
 }
 
+// 获取本月缺时时长
+async function loadEmployeeMissingDuration() {
+  try {
+    const resp = await axios.get('/api/v1/employee/attendance/missing-duration', {
+      params: { yearMonth: currentYearMonth.value }
+    })
+    if (resp.data?.data) {
+      employeeMissingMinutes.value = resp.data.data.totalMinutes || 0
+    }
+  } catch (e) {
+    console.warn('Failed to load missing duration:', e)
+  }
+}
+
 // 打开补签对话框（默认选中今天）
 const openRetroactiveDialog = () => {
   const now = new Date()
@@ -672,7 +703,8 @@ const refreshData = async () => {
   await Promise.all([
     getTodaySignData(),
     getHistoryData(),
-    getLeaveStatus()
+    getLeaveStatus(),
+    loadEmployeeMissingDuration()
   ])
 }
 
@@ -1077,5 +1109,13 @@ onUnmounted(() => {
 
 :deep(.el-pagination .el-pager li.active) {
   color: var(--apple-blue);
+}
+
+.text-warning { color: #FF9500; }
+.text-success { color: #34C759; }
+
+.missing-card {
+  padding: 12px 24px;
+  margin-bottom: 24px;
 }
 </style> 

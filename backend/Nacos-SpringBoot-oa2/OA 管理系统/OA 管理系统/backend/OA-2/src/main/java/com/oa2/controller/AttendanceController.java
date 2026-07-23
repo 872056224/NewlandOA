@@ -57,6 +57,18 @@ public class AttendanceController {
         return attendanceService.getHistory(emp.getNumber(), currentPage, pageSize);
     }
 
+    /** 当月缺时时长 */
+    @GetMapping("/missing-duration")
+    public RESP missingDuration(@RequestParam(required = false) String yearMonth,
+                                HttpSession session) {
+        Emp emp = (Emp) session.getAttribute("emp");
+        if (emp == null) return RESP.error("未登录");
+        if (yearMonth == null || yearMonth.isEmpty()) {
+            yearMonth = java.time.YearMonth.now().toString();
+        }
+        return attendanceService.getMonthlyMissingDuration(emp.getNumber(), yearMonth);
+    }
+
     /** 旧接口兼容：my-records → attendance history */
     @GetMapping("/my-records")
     public RESP myRecords(HttpSession session) {

@@ -773,7 +773,10 @@ async function loadDeptStats() {
     })
     if (response.data && response.data.data) {
       deptStatsData.value = response.data.data
-      nextTick(() => updateDeptPieChart())
+      nextTick(() => {
+        if (!deptPieChart) initDeptPieChart()
+        updateDeptPieChart()
+      })
     } else if (response.data && response.data.code === 500) {
       ElMessage.warning(response.data.message || '未找到该部门考勤数据')
       deptStatsData.value = null

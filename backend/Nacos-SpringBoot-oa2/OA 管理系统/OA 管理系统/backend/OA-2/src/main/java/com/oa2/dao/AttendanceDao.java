@@ -78,4 +78,9 @@ public interface AttendanceDao {
 
     @Select("SELECT COUNT(*) FROM day.attendance WHERE date=#{date} AND today_status='LEAVE'")
     int countLeaveByDate(@Param("date") LocalDate date);
+
+    @Select("SELECT COALESCE(SUM(missing_duration),0) FROM day.attendance WHERE emp_id=#{empId} " +
+            "AND date >= #{start} AND date <= #{end}")
+    int sumMissingDurationByMonth(@Param("empId") int empId, @Param("start") LocalDate start,
+                                  @Param("end") LocalDate end);
 }
