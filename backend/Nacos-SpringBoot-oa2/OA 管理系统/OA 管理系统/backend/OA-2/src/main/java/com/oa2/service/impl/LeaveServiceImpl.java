@@ -43,11 +43,8 @@ public class LeaveServiceImpl implements LeaveService {
 
         int ret = leaveDao.insert(leave);
         if (ret > 0) {
-            // 注意：请假审批通过后才更新 attendance.today_status = LEAVE
-            // 审批逻辑在 OA-7 LeaveServiceImpl.approve() 中通过考勤重算处理
-
-            // 通知所有管理员
-            notifyAdmins("leave_submitted", "新请假申请",
+            // 按角色通知相关管理员（董事长 + 人事部部长 + 本部门部长/副部长）
+            notifyAdmins(number, "leave_submitted", "新请假申请",
                     name + " 提交了" + type + "申请（" + startDate + " ~ " + endDate + "）",
                     leave.getId());
             return RESP.ok("提交成功");
@@ -70,9 +67,10 @@ public class LeaveServiceImpl implements LeaveService {
         return RESP.ok(count > 0);
     }
 
-    private void notifyAdmins(String type, String title, String content, String bizId) {
+    /** 按角色通知相关管理员（董事长 + 人事部部长 + 本部门部长/副部长） */
+    private void notifyAdmins(int applicantNumber, String type, String title, String content, String bizId) {
         try {
-            List<Integer> adminIds = adminDao.selectAllIds();
+            List<Integer> adminIds = adminDao.selectNotifyTargetIds(applicantNumber);
             for (int adminId : adminIds) {
                 notificationService.sendNotification(adminId, type, title, content, bizId);
             }

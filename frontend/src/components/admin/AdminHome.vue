@@ -35,7 +35,9 @@
                 <el-button text size="small" @click="goTo('/admin-home/notifications')">查看全部</el-button>
               </div>
             </div>
-            <span class="user-info">欢迎，{{ userInfo.name || '管理员' }}</span>
+            <span class="user-info">欢迎，{{ userInfo.empName || userInfo.name || '管理员' }}
+              <span v-if="userInfo.role" class="role-tag">{{ roleLabel }}</span>
+            </span>
             <el-button @click="logout" text size="small">退出登录</el-button>
           </div>
         </div>
@@ -56,11 +58,11 @@
               <el-icon><User /></el-icon>
               <span>员工管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin-home/dept-manage">
+            <el-menu-item index="/admin-home/dept-manage" v-if="userRole !== 'DEPT_HEAD'">
               <el-icon><OfficeBuilding /></el-icon>
               <span>部门管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin-home/duty-manage">
+            <el-menu-item index="/admin-home/duty-manage" v-if="userRole !== 'DEPT_HEAD'">
               <el-icon><Briefcase /></el-icon>
               <span>职务管理</span>
             </el-menu-item>
@@ -80,6 +82,10 @@
               <el-icon><Clock /></el-icon>
               <span>补签审批</span>
             </el-menu-item>
+            <el-menu-item index="/admin-home/overtime-approval">
+              <el-icon><Clock /></el-icon>
+              <span>加班审批</span>
+            </el-menu-item>
             <el-menu-item index="/admin-home/kb-manage">
               <el-icon><ChatDotRound /></el-icon>
               <span>知识库管理</span>
@@ -88,13 +94,17 @@
               <el-icon><Bell /></el-icon>
               <span>通知列表</span>
             </el-menu-item>
-            <el-menu-item index="/admin-home/holiday-manage">
-              <el-icon><Calendar /></el-icon>
-              <span>节假日管理</span>
+            <el-menu-item index="/admin-home/salary-manage" v-if="userRole !== 'DEPT_HEAD'">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>工资核算</span>
             </el-menu-item>
-            <el-menu-item index="/admin-home/attendance-rule">
+            <el-menu-item index="/admin-home/attendance-rule" v-if="userRole !== 'DEPT_HEAD'">
               <el-icon><Setting /></el-icon>
               <span>考勤规则</span>
+            </el-menu-item>
+            <el-menu-item index="/admin-home/holiday-manage" v-if="userRole !== 'DEPT_HEAD'">
+              <el-icon><Calendar /></el-icon>
+              <span>节假日管理</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
@@ -109,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -120,7 +130,17 @@ import axios from 'axios'
 
 const router = useRouter()
 const userInfo = ref<any>({})
+const userRole = ref('')
 const unreadCount = ref(0)
+
+const roleLabel = computed(() => {
+  const labels: Record<string, string> = {
+    'CHAIRMAN': '董事长',
+    'HR_DIRECTOR': '人事部部长',
+    'DEPT_HEAD': '部门部长'
+  }
+  return labels[userRole.value] || ''
+})
 const showNotifications = ref(false)
 const notifList = ref<any[]>([])
 let notifTimer: NodeJS.Timeout
@@ -135,6 +155,7 @@ onMounted(async () => {
     const response = await axios.get('/api/v1/admin/auth/profile')
     if (response.data && response.data.data) {
       userInfo.value = response.data.data
+      userRole.value = response.data.data.role || ''
     } else {
       userInfo.value = { name: '管理员' }
     }
@@ -249,6 +270,19 @@ const markAllRead = async () => {
 
 .header-right .el-button:hover {
   color: #1d1d1f;
+}
+
+.role-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #0071e3;
+  background: #e8f0fe;
+  padding: 0 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+  line-height: 20px;
+  vertical-align: middle;
 }
 
 /* ── 通知铃铛 ── */

@@ -43,7 +43,7 @@ public class AttendanceRuleController {
      */
     @PostMapping
     public RESP create(@RequestBody AttendanceRule rule) {
-        rule.setId(null); // 确保新增
+        rule.setId(null);
         return attendanceRuleService.save(rule);
     }
 

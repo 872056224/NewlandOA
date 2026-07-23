@@ -15,11 +15,11 @@ public interface SignService {
 
     RESP todaySigned(int currentPage, int pageSize);
 
-    RESP dailyStatistics(int currentPage, int pageSize);
+    RESP dailyStatistics(int currentPage, int pageSize, HttpSession session);
 
-    RESP dailyDetails(String date);
+    RESP dailyDetails(String date, HttpSession session);
 
-    RESP chartData();
+    RESP chartData(HttpSession session);
 
     RESP unsigned(int currentPage, int pageSize);
 

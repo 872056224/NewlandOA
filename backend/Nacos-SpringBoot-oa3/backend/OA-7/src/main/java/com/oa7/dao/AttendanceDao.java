@@ -153,4 +153,40 @@ public interface AttendanceDao {
     List<Attendance> selectByEmpAndDateRange(@Param("empId") int empId,
                                               @Param("start") LocalDate start,
                                               @Param("end") LocalDate end);
+
+    // ===== DEPT_HEAD data isolation =====
+
+    /** 按部门查询某天的考勤记录 */
+    @Select("SELECT a.* FROM day.attendance a " +
+            "INNER JOIN day.emp e ON e.number = a.emp_id " +
+            "WHERE a.date = #{date} AND e.dept_id = #{deptId}")
+    @ResultMap("attendanceResult")
+    List<Attendance> selectByDateAndDept(@Param("date") LocalDate date, @Param("deptId") int deptId);
+
+    /** 统计某天某部门的考勤总人数 */
+    @Select("SELECT COUNT(*) FROM day.attendance a " +
+            "INNER JOIN day.emp e ON e.number = a.emp_id " +
+            "WHERE a.date = #{date} AND e.dept_id = #{deptId}")
+    int countByDateAndDept(@Param("date") LocalDate date, @Param("deptId") int deptId);
+
+    /** 统计某天某部门已签到人数 */
+    @Select("SELECT COUNT(*) FROM day.attendance a " +
+            "INNER JOIN day.emp e ON e.number = a.emp_id " +
+            "WHERE a.date = #{date} AND e.dept_id = #{deptId} " +
+            "AND a.today_status IN ('CHECKED_IN', 'CHECKED_OUT')")
+    int countCheckedInByDateAndDept(@Param("date") LocalDate date, @Param("deptId") int deptId);
+
+    /** 统计某天某部门请假人数 */
+    @Select("SELECT COUNT(*) FROM day.attendance a " +
+            "INNER JOIN day.emp e ON e.number = a.emp_id " +
+            "WHERE a.date = #{date} AND e.dept_id = #{deptId} " +
+            "AND a.today_status = 'LEAVE'")
+    int countLeaveByDateAndDept(@Param("date") LocalDate date, @Param("deptId") int deptId);
+
+    /** 统计某天某部门缺勤人数 */
+    @Select("SELECT COUNT(*) FROM day.attendance a " +
+            "INNER JOIN day.emp e ON e.number = a.emp_id " +
+            "WHERE a.date = #{date} AND e.dept_id = #{deptId} " +
+            "AND a.today_status = 'NOT_CHECKED_IN'")
+    int countAbsenceByDateAndDept(@Param("date") LocalDate date, @Param("deptId") int deptId);
 }

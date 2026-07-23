@@ -1,5 +1,6 @@
 package com.oa7.pojo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
@@ -7,14 +8,33 @@ import java.time.LocalDateTime;
 @Data
 public class AttendanceRule {
     private Integer id;
-    private String ruleName;            // e.g. "默认规则", "技术部规则"
-    private Integer deptId;             // null = 全局默认规则
-    private LocalTime workStartTime;    // default 09:00
-    private LocalTime workEndTime;      // default 18:00
-    private Integer lateThresholdMin;   // grace period minutes, default 0
-    private Integer earlyThresholdMin;  // grace period minutes, default 0
-    private Boolean enabled;            // default true
-    private Integer missingToleranceMin; // 缺时宽限（分钟），默认30
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    @JsonProperty("ruleName")
+    private String rule_name;
+
+    @JsonProperty("deptId")
+    private Integer dept_id;
+
+    @JsonProperty("workStartTime")
+    private LocalTime work_start_time;
+
+    @JsonProperty("workEndTime")
+    private LocalTime work_end_time;
+
+    @JsonProperty("lateThresholdMin")
+    private Integer late_threshold_min;
+
+    @JsonProperty("earlyThresholdMin")
+    private Integer early_threshold_min;
+
+    private Boolean enabled;
+
+    @JsonProperty("missingToleranceMin")
+    private Integer missing_tolerance_min;
+
+    @JsonProperty("createdAt")
+    private LocalDateTime created_at;
+
+    @JsonProperty("updatedAt")
+    private LocalDateTime updated_at;
 }

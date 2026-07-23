@@ -1,8 +1,10 @@
 package com.oa7.controller;
 
 import com.oa7.dao.AttendanceDao;
+import com.oa7.pojo.Admin;
 import com.oa7.service.SignService;
 import com.oa7.pojo.Sign;
+import com.oa7.util.AdminAuthUtil;
 import com.oa7.util.DU;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,14 +35,26 @@ public class SignController {
      * 今日考勤统计概览
      */
     @GetMapping("/today/stats")
-    public RESP todayStats() {
+    public RESP todayStats(HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
         LocalDate today = LocalDate.now();
+
         Map<String, Object> stats = new LinkedHashMap<>();
-        stats.put("total", attendanceDao.countByDate(today));
-        stats.put("checkedIn", attendanceDao.countCheckedInByDate(today));
-        stats.put("late", attendanceDao.countLateByDate(today));
-        stats.put("leave", attendanceDao.countLeaveByDate(today));
-        stats.put("absence", attendanceDao.countAbsenceByDate(today));
+        if (deptHead) {
+            int deptId = admin.getDeptId();
+            stats.put("total", attendanceDao.countByDateAndDept(today, deptId));
+            stats.put("checkedIn", attendanceDao.countCheckedInByDateAndDept(today, deptId));
+            stats.put("late", 0); // 简化处理
+            stats.put("leave", attendanceDao.countLeaveByDateAndDept(today, deptId));
+            stats.put("absence", attendanceDao.countAbsenceByDateAndDept(today, deptId));
+        } else {
+            stats.put("total", attendanceDao.countByDate(today));
+            stats.put("checkedIn", attendanceDao.countCheckedInByDate(today));
+            stats.put("late", attendanceDao.countLateByDate(today));
+            stats.put("leave", attendanceDao.countLeaveByDate(today));
+            stats.put("absence", attendanceDao.countAbsenceByDate(today));
+        }
         return RESP.ok(stats);
     }
 
@@ -48,14 +62,28 @@ public class SignController {
      * Task 5: 今日实时统计（含未签到人数）
      */
     @GetMapping("/today/realtime-stats")
-    public RESP todayRealtimeStats() {
+    public RESP todayRealtimeStats(HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
         LocalDate today = LocalDate.now();
-        int total = attendanceDao.countByDate(today);
-        int checkedIn = attendanceDao.countCheckedInByDate(today);
-        int notCheckedIn = attendanceDao.countNotCheckedInByDate(today);
-        int late = attendanceDao.countLateByDate(today);
-        int leave = attendanceDao.countLeaveByDate(today);
-        int absence = attendanceDao.countAbsenceByDate(today);
+
+        int total, checkedIn, notCheckedIn, late, leave, absence;
+        if (deptHead) {
+            int deptId = admin.getDeptId();
+            total = attendanceDao.countByDateAndDept(today, deptId);
+            checkedIn = attendanceDao.countCheckedInByDateAndDept(today, deptId);
+            notCheckedIn = attendanceDao.countAbsenceByDateAndDept(today, deptId);
+            late = 0;
+            leave = attendanceDao.countLeaveByDateAndDept(today, deptId);
+            absence = attendanceDao.countAbsenceByDateAndDept(today, deptId);
+        } else {
+            total = attendanceDao.countByDate(today);
+            checkedIn = attendanceDao.countCheckedInByDate(today);
+            notCheckedIn = attendanceDao.countNotCheckedInByDate(today);
+            late = attendanceDao.countLateByDate(today);
+            leave = attendanceDao.countLeaveByDate(today);
+            absence = attendanceDao.countAbsenceByDate(today);
+        }
 
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("total", total);
@@ -72,14 +100,25 @@ public class SignController {
      * Task 6: 昨日考勤结算统计
      */
     @GetMapping("/yesterday/stats")
-    public RESP yesterdayStats() {
+    public RESP yesterdayStats(HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
         LocalDate yesterday = LocalDate.now().minusDays(1);
-        List<Map<String, Object>> statusCounts = attendanceDao.countGroupByStatus(yesterday);
 
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("date", yesterday.toString());
-        for (Map<String, Object> row : statusCounts) {
-            stats.put(String.valueOf(row.get("attendance_status")), row.get("cnt"));
+
+        if (deptHead) {
+            int deptId = admin.getDeptId();
+            stats.put("total", attendanceDao.countByDateAndDept(yesterday, deptId));
+            stats.put("checkedIn", attendanceDao.countCheckedInByDateAndDept(yesterday, deptId));
+            stats.put("leave", attendanceDao.countLeaveByDateAndDept(yesterday, deptId));
+            stats.put("absence", attendanceDao.countAbsenceByDateAndDept(yesterday, deptId));
+        } else {
+            List<Map<String, Object>> statusCounts = attendanceDao.countGroupByStatus(yesterday);
+            for (Map<String, Object> row : statusCounts) {
+                stats.put(String.valueOf(row.get("attendance_status")), row.get("cnt"));
+            }
         }
         return RESP.ok(stats);
     }
@@ -92,18 +131,19 @@ public class SignController {
 
     @GetMapping("/daily-statistics")
     public RESP dailyStatistics(@RequestParam int currentPage,
-                                @RequestParam int pageSize) {
-        return signService.dailyStatistics(currentPage, pageSize);
+                                @RequestParam int pageSize,
+                                HttpSession session) {
+        return signService.dailyStatistics(currentPage, pageSize, session);
     }
 
     @GetMapping("/daily-details")
-    public RESP dailyDetails(@RequestParam String date) {
-        return signService.dailyDetails(date);
+    public RESP dailyDetails(@RequestParam String date, HttpSession session) {
+        return signService.dailyDetails(date, session);
     }
 
     @GetMapping("/statistics/chart")
-    public RESP chartData() {
-        return signService.chartData();
+    public RESP chartData(HttpSession session) {
+        return signService.chartData(session);
     }
 
     @GetMapping("/unsigned")

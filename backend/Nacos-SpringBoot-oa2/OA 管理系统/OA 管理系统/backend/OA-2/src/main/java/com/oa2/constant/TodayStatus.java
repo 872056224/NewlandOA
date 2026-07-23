@@ -12,6 +12,8 @@ public enum TodayStatus {
     MAKEUP_PENDING("补卡审批中"),
     ANOMALY("签到异常"),
     DAY_OFF("调休"),
+    HOLIDAY("节假日"),
+    REST_DAY("休息日"),
     BUSINESS_PENDING("出差审批中"),
     FIELD_PENDING("外勤审批中");
 

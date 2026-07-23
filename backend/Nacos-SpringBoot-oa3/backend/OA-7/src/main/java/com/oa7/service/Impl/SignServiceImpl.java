@@ -5,15 +5,18 @@ import com.oa7.dao.EmpDao;
 import com.oa7.dao.HolidayDao;
 import com.oa7.dao.LeaveDao;
 import com.oa7.dao.SignDao;
+import com.oa7.pojo.Admin;
 import com.oa7.pojo.Attendance;
 import com.oa7.pojo.O;
 import com.oa7.pojo.Sign;
 import com.oa7.service.SignService;
+import com.oa7.util.AdminAuthUtil;
 import com.oa7.util.DU;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -53,8 +56,8 @@ public class SignServiceImpl implements SignService {
     private int getToleranceMinutes() {
         try {
             com.oa7.pojo.AttendanceRule rule = attendanceRuleService.getDefaultRule();
-            if (rule != null && rule.getMissingToleranceMin() != null) {
-                return rule.getMissingToleranceMin();
+            if (rule != null && rule.getMissing_tolerance_min() != null) {
+                return rule.getMissing_tolerance_min();
             }
         } catch (Exception e) {
             // 使用默认值
@@ -103,9 +106,12 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public RESP dailyStatistics(int currentPage, int pageSize) {
+    public RESP dailyStatistics(int currentPage, int pageSize, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
+        int totalEmployees = deptHead ? empDao.countByDept(admin.getDeptId()) : getTotalEmployeeCount();
+
         LocalDate today = LocalDate.now();
-        int totalEmployees = getTotalEmployeeCount();
 
         List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
                 .filter(d -> !d.isAfter(today))
@@ -123,8 +129,12 @@ public class SignServiceImpl implements SignService {
         boolean isToday = false;
         for (LocalDate date : pageDates) {
             isToday = date.equals(today);
-            int onLeave = leaveDao.countApprovedLeaveByDate(date.toString());
-            List<Attendance> records = attendanceDao.selectByDate(date);
+            int onLeave = deptHead
+                ? attendanceDao.countLeaveByDateAndDept(date, admin.getDeptId())
+                : leaveDao.countApprovedLeaveByDate(date.toString());
+            List<Attendance> records = deptHead
+                ? attendanceDao.selectByDateAndDept(date, admin.getDeptId())
+                : attendanceDao.selectByDate(date);
 
             int signed = 0;          // 签到+签退齐全
             int anomaly = 0;          // 打卡异常（仅签到无签退）
@@ -163,12 +173,18 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public RESP dailyDetails(String date) {
-        int totalEmployees = getTotalEmployeeCount();
-        int onLeave = leaveDao.countApprovedLeaveByDate(date);
+    public RESP dailyDetails(String date, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
+        int totalEmployees = deptHead ? empDao.countByDept(admin.getDeptId()) : getTotalEmployeeCount();
+        int onLeave = deptHead
+            ? attendanceDao.countLeaveByDateAndDept(LocalDate.parse(date), admin.getDeptId())
+            : leaveDao.countApprovedLeaveByDate(date);
 
         LocalDate localDate = LocalDate.parse(date);
-        List<Attendance> records = attendanceDao.selectByDate(localDate);
+        List<Attendance> records = deptHead
+            ? attendanceDao.selectByDateAndDept(localDate, admin.getDeptId())
+            : attendanceDao.selectByDate(localDate);
 
         int signed = 0;
         int anomaly = 0;
@@ -201,9 +217,11 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public RESP chartData() {
+    public RESP chartData(HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        boolean deptHead = admin != null && admin.isDeptHead();
+        int totalEmployees = deptHead ? empDao.countByDept(admin.getDeptId()) : getTotalEmployeeCount();
         LocalDate today = LocalDate.now();
-        int totalEmployees = getTotalEmployeeCount();
 
         List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
                 .filter(d -> !d.isAfter(today))
@@ -217,8 +235,12 @@ public class SignServiceImpl implements SignService {
         List<Integer> leaveData = new ArrayList<>();
 
         for (LocalDate date : workdayDates) {
-            int onLeave = leaveDao.countApprovedLeaveByDate(date.toString());
-            List<Attendance> records = attendanceDao.selectByDate(date);
+            int onLeave = deptHead
+                ? attendanceDao.countLeaveByDateAndDept(date, admin.getDeptId())
+                : leaveDao.countApprovedLeaveByDate(date.toString());
+            List<Attendance> records = deptHead
+                ? attendanceDao.selectByDateAndDept(date, admin.getDeptId())
+                : attendanceDao.selectByDate(date);
 
             int signedCount = 0;
             int anomalyCount = 0;

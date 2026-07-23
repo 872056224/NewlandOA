@@ -35,7 +35,7 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
         int ret = makeupRequestDao.insert(req);
         if (ret > 0) {
             String typeLabel = "CHECK_IN".equals(type) ? "上班签到" : "下班签退";
-            notifyAdmins("makeup_submitted", "新补卡申请",
+            notifyAdmins(empId, "makeup_submitted", "新补卡申请",
                     "员工提交了 " + date + "(" + typeLabel + ") 的补卡申请",
                     String.valueOf(req.getId()));
             return RESP.ok("补卡申请已提交，等待管理员审批");
@@ -51,9 +51,10 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
         return RESP.ok(list, currentPage, total);
     }
 
-    private void notifyAdmins(String type, String title, String content, String bizId) {
+    /** 按角色通知相关管理员（董事长 + 人事部部长 + 本部门部长/副部长） */
+    private void notifyAdmins(int applicantNumber, String type, String title, String content, String bizId) {
         try {
-            List<Integer> adminIds = adminDao.selectAllIds();
+            List<Integer> adminIds = adminDao.selectNotifyTargetIds(applicantNumber);
             for (int adminId : adminIds) {
                 notificationService.sendNotification(adminId, type, title, content, bizId);
             }

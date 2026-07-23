@@ -85,6 +85,9 @@ const formatType = (type: string) => {
     'retroactive_submitted': '补签提交',
     'retroactive_approved': '补签批准',
     'retroactive_rejected': '补签拒绝',
+    'overtime_submitted': '加班提交',
+    'overtime_approved': '加班批准',
+    'overtime_rejected': '加班拒绝',
   }
   return map[type] || type
 }

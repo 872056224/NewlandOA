@@ -6,14 +6,17 @@ import com.oa7.constant.TodayStatus;
 import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.MakeupRequestDao;
 import com.oa7.dao.NotificationDao;
+import com.oa7.pojo.Admin;
 import com.oa7.pojo.Attendance;
 import com.oa7.pojo.MakeupRequest;
 import com.oa7.service.MakeupRequestService;
 import com.oa7.service.RecalculateAttendanceService;
+import com.oa7.util.AdminAuthUtil;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -35,19 +38,39 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
     private RecalculateAttendanceService recalculateAttendanceService;
 
     @Override
-    public RESP getPending(int currentPage, int pageSize) {
+    public RESP getPending(int currentPage, int pageSize, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+
         PageHelper.startPage(currentPage, pageSize);
-        List<MakeupRequest> list = makeupRequestDao.selectPending();
+        List<MakeupRequest> list;
+
+        if (admin != null && admin.isDeptHead()) {
+            list = makeupRequestDao.selectPendingByDept(admin.getDeptId());
+        } else {
+            list = makeupRequestDao.selectPending();
+        }
+
         PageInfo<MakeupRequest> pageInfo = new PageInfo<>(list);
         return RESP.ok(list, pageInfo.getPageNum(), (int) pageInfo.getTotal());
     }
 
     @Override
-    public RESP approve(int id) {
+    public RESP approve(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         MakeupRequest request = makeupRequestDao.selectById(id);
         if (request == null) return RESP.error("补卡申请不存在");
         if (!"PENDING".equals(request.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + request.getStatus());
+        }
+
+        // DEPT_HEAD：只能审批本部门的补卡申请
+        if (admin.isDeptHead()) {
+            Integer deptId = makeupRequestDao.selectDeptIdByRequestId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权审批其他部门的补卡申请");
+            }
         }
 
         // 乐观锁更新
@@ -96,11 +119,22 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
     }
 
     @Override
-    public RESP reject(int id) {
+    public RESP reject(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         MakeupRequest request = makeupRequestDao.selectById(id);
         if (request == null) return RESP.error("补卡申请不存在");
         if (!"PENDING".equals(request.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + request.getStatus());
+        }
+
+        // DEPT_HEAD：只能拒绝本部门的补卡申请
+        if (admin.isDeptHead()) {
+            Integer deptId = makeupRequestDao.selectDeptIdByRequestId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权拒绝其他部门的补卡申请");
+            }
         }
 
         // 乐观锁更新
@@ -122,11 +156,22 @@ public class MakeupRequestServiceImpl implements MakeupRequestService {
     }
 
     @Override
-    public RESP revoke(int id) {
+    public RESP revoke(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         MakeupRequest request = makeupRequestDao.selectById(id);
         if (request == null) return RESP.error("补卡申请不存在");
         if (!"APPROVED".equals(request.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + request.getStatus());
+        }
+
+        // DEPT_HEAD：只能撤销本部门的补卡申请
+        if (admin.isDeptHead()) {
+            Integer deptId = makeupRequestDao.selectDeptIdByRequestId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权撤销其他部门的补卡申请");
+            }
         }
 
         // 乐观锁更新

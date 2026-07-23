@@ -1,8 +1,13 @@
 package com.oa7.service.Impl;
 
+import com.oa7.constant.TodayStatus;
+import com.oa7.dao.AttendanceDao;
+import com.oa7.dao.EmpDao;
 import com.oa7.dao.HolidayDao;
+import com.oa7.pojo.Attendance;
 import com.oa7.pojo.Holiday;
 import com.oa7.service.HolidayService;
+import com.oa7.service.RecalculateAttendanceService;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +25,15 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Autowired
     private HolidayDao holidayDao;
+
+    @Autowired
+    private EmpDao empDao;
+
+    @Autowired
+    private AttendanceDao attendanceDao;
+
+    @Autowired
+    private RecalculateAttendanceService recalculateAttendanceService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -47,12 +61,11 @@ public class HolidayServiceImpl implements HolidayService {
             return RESP.error("日期格式错误，请使用 yyyy-MM-dd 格式");
         }
 
-        // 校验 type 合法性
         if (!"WORKDAY".equals(type) && !"HOLIDAY".equals(type) && !"REST_DAY".equals(type)) {
             return RESP.error("type 必须为 WORKDAY/HOLIDAY/REST_DAY 之一");
         }
 
-        // 检查是否存在，存在则更新，不存在则插入
+        // 更新/插入节假日
         Holiday existing = holidayDao.selectByDate(date);
         if (existing != null) {
             existing.setType(type);
@@ -67,7 +80,29 @@ public class HolidayServiceImpl implements HolidayService {
             holidayDao.insertOrUpdate(holiday);
         }
 
+        // 如果是已过去的日期，联动考勤重算（所有员工该日的考勤重新计算）
+        if (!date.isAfter(LocalDate.now())) {
+            recalculateAllAttendance(date);
+        }
+
         return RESP.ok("操作成功");
+    }
+
+    /** 重算所有员工在指定日期的考勤（先创建缺失的考勤记录） */
+    private void recalculateAllAttendance(LocalDate date) {
+        try {
+            List<Integer> allEmpNumbers = empDao.selectAllActiveEmpNumbers();
+            for (int empId : allEmpNumbers) {
+                // 先确保考勤记录存在（比如周末改工作日时，原本没有记录）
+                Attendance att = attendanceDao.selectByEmpAndDate(empId, date);
+                if (att == null) {
+                    attendanceDao.insertOrUpdate(empId, date, TodayStatus.NOT_CHECKED_IN);
+                }
+                recalculateAttendanceService.recalculate(empId, date);
+            }
+        } catch (Exception e) {
+            System.err.println("节假日变更考勤重算失败: " + e.getMessage());
+        }
     }
 
     @Override
@@ -76,13 +111,11 @@ public class HolidayServiceImpl implements HolidayService {
             return RESP.error("年份范围必须在 2000-2100 之间");
         }
 
-        // 获取数据库中已有的日期
         List<Holiday> existingList = holidayDao.selectByYear(year);
         Set<LocalDate> existingDates = existingList.stream()
                 .map(Holiday::getDate)
                 .collect(Collectors.toSet());
 
-        // 生成全年日期，排除已存在的
         List<Holiday> toInsert = new ArrayList<>();
         LocalDate start = LocalDate.of(year, 1, 1);
         LocalDate end = LocalDate.of(year, 12, 31);
@@ -92,7 +125,6 @@ public class HolidayServiceImpl implements HolidayService {
                 Holiday holiday = new Holiday();
                 holiday.setDate(date);
                 holiday.setYear(year);
-                // 根据周末判断类型
                 if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
                     holiday.setType("REST_DAY");
                     holiday.setDescription("周末");
@@ -108,7 +140,6 @@ public class HolidayServiceImpl implements HolidayService {
             return RESP.ok("该年份数据已完整，无需导入");
         }
 
-        // 分批插入，每批 100 条
         int batchSize = 100;
         int total = 0;
         for (int i = 0; i < toInsert.size(); i += batchSize) {
@@ -124,7 +155,6 @@ public class HolidayServiceImpl implements HolidayService {
     public RESP getCalendar(int year) {
         List<Holiday> list = holidayDao.selectByYear(year);
 
-        // 如果数据不完整，自动补全缺失的日期
         int expectedDays = LocalDate.of(year, 12, 31).getDayOfYear();
         if (list.size() < expectedDays) {
             batchImport(year);

@@ -32,6 +32,6 @@ public interface NotificationDao {
     int markAllAsRead(@Param("number") int number);
 
     /** 根据 biz_id 将所有管理员的通知标记为已读（任一管理员处理后调用） */
-    @Update("UPDATE day.notification SET is_read=1 WHERE biz_id=#{bizId} AND type IN ('leave_submitted', 'retroactive_submitted')")
+    @Update("UPDATE day.notification SET is_read=1 WHERE biz_id=#{bizId} AND type IN ('leave_submitted', 'retroactive_submitted', 'overtime_submitted')")
     int markAllReadByBizId(@Param("bizId") String bizId);
 }

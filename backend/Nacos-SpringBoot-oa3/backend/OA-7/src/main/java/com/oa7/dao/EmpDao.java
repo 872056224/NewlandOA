@@ -80,4 +80,19 @@ public interface EmpDao {
             "day.emp left join department on department.dept_id = emp.dept_id " +
             "left join duty on emp.duty_id = duty.duty_id where number=#{number}")
     Emp selectByEmpNumber(int number);
+
+    //更新员工自定义月薪
+    @Update("update day.emp set base_salary=#{baseSalary} where number=#{number}")
+    int updateBaseSalary(@Param("number") int number, @Param("baseSalary") java.math.BigDecimal baseSalary);
+
+    //按部门分页查询员工（DEPT_HEAD 数据隔离用）
+    @Select("select emp.*,dept_name,duty_name from " +
+            "day.emp left join department on department.dept_id = emp.dept_id " +
+            "left join duty on emp.duty_id = duty.duty_id " +
+            "where emp.dept_id = #{deptId} order by number")
+    List<Emp> selectByPageHelperByDept(@Param("deptId") int deptId);
+
+    //按部门统计人数
+    @Select("select count(*) from day.emp where dept_id = #{deptId}")
+    int countByDept(@Param("deptId") int deptId);
 }

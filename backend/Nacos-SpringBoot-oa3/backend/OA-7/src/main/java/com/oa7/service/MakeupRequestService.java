@@ -2,9 +2,11 @@ package com.oa7.service;
 
 import com.oa7.util.RESP;
 
+import javax.servlet.http.HttpSession;
+
 public interface MakeupRequestService {
-    RESP getPending(int currentPage, int pageSize);
-    RESP approve(int id);
-    RESP reject(int id);
-    RESP revoke(int id);
+    RESP getPending(int currentPage, int pageSize, HttpSession session);
+    RESP approve(int id, HttpSession session);
+    RESP reject(int id, HttpSession session);
+    RESP revoke(int id, HttpSession session);
 }

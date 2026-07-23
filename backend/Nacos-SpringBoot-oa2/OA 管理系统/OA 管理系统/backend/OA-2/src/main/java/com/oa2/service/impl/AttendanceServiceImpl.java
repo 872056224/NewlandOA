@@ -122,6 +122,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                 ? computeMissingDuration(att.getCheckInTime().toLocalTime(), att.getCheckOutTime().toLocalTime())
                 : 0);
         }
+        // 过滤掉节假日和休息日（前端不展示）
+        int removed = 0;
+        java.util.Iterator<Attendance> it = list.iterator();
+        while (it.hasNext()) {
+            Attendance att = it.next();
+            if (att.getTodayStatus() == TodayStatus.HOLIDAY || att.getTodayStatus() == TodayStatus.REST_DAY) {
+                it.remove();
+                removed++;
+            }
+        }
+        total = Math.max(0, total - removed);
         return RESP.ok(list, currentPage, total);
     }
 
@@ -132,9 +143,12 @@ public class AttendanceServiceImpl implements AttendanceService {
      * - 无签到 → 未签到（除非请假）
      */
     private TodayStatus resolveDisplayStatus(Attendance att, LocalDate date) {
-        // 请假优先
+        // 优先使用数据库中的节假日/休息日状态（节假日管理页面修改后同步过来）
         if (att.getTodayStatus() == TodayStatus.LEAVE) {
             return TodayStatus.LEAVE;
+        }
+        if (att.getTodayStatus() == TodayStatus.HOLIDAY || att.getTodayStatus() == TodayStatus.REST_DAY) {
+            return att.getTodayStatus();  // 保持节假日/休息日状态
         }
         if (att.getCheckInTime() != null && att.getCheckOutTime() != null) {
             return TodayStatus.CHECKED_OUT;  // 已签退
@@ -157,8 +171,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, start, end);
         int totalMinutes = 0;
         for (Attendance a : records) {
-            // 跳过请假（todayStatus = LEAVE）
-            if (a.getTodayStatus() == com.oa2.constant.TodayStatus.LEAVE) continue;
+            // 跳过请假/节假日/休息日（这些日期不计算缺时）
+            TodayStatus ts = a.getTodayStatus();
+            if (ts == TodayStatus.LEAVE || ts == TodayStatus.HOLIDAY || ts == TodayStatus.REST_DAY) continue;
             if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
                 totalMinutes += computeMissingDuration(
                     a.getCheckInTime().toLocalTime(),

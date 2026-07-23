@@ -71,6 +71,18 @@
               <el-icon><List /></el-icon>
               <span>请假列表</span>
             </el-menu-item>
+            <el-menu-item index="/emp-home/overtime-apply">
+              <el-icon><Clock /></el-icon>
+              <span>加班申请</span>
+            </el-menu-item>
+            <el-menu-item index="/emp-home/overtime-list">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>加班记录</span>
+            </el-menu-item>
+            <el-menu-item index="/emp-home/salary">
+              <el-icon><Coin /></el-icon>
+              <span>我的工资</span>
+            </el-menu-item>
             <el-menu-item index="/emp-home/notifications">
               <el-icon><Bell /></el-icon>
               <span>通知列表</span>
@@ -100,7 +112,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  User, Clock, Document, Service, Edit, List, Lock, Bell
+  User, Clock, Document, Service, Edit, List, Lock, Bell, DataAnalysis, Coin
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 

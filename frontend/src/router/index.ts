@@ -56,7 +56,22 @@ const router = createRouter({
           path: 'leave-list',
           name: 'EmpLeaveList',
           component: () => import('../components/emp/EmpLeaveList.vue')
-        }
+        },
+        {
+          path: 'overtime-apply',
+          name: 'EmpOvertimeApply',
+          component: () => import('../components/emp/EmpOvertimeApply.vue')
+        },
+        {
+          path: 'overtime-list',
+          name: 'EmpOvertimeList',
+          component: () => import('../components/emp/EmpOvertimeList.vue')
+        },
+        {
+          path: 'salary',
+          name: 'EmpSalary',
+          component: () => import('../components/emp/EmpSalary.vue')
+        },
       ]
     },
     {
@@ -120,6 +135,11 @@ const router = createRouter({
           component: () => import('../components/admin/RetroactiveApproval.vue')
         },
         {
+          path: 'overtime-approval',
+          name: 'OvertimeApproval',
+          component: () => import('../components/admin/OvertimeApproval.vue')
+        },
+        {
           path: 'leave-approval',
           name: 'LeaveApproval',
           component: () => import('../components/admin/LeaveApproval.vue')
@@ -133,6 +153,11 @@ const router = createRouter({
           path: 'holiday-manage',
           name: 'HolidayManage',
           component: () => import('../components/admin/HolidayManage.vue')
+        },
+        {
+          path: 'salary-manage',
+          name: 'SalaryManage',
+          component: () => import('../components/admin/SalaryManage.vue')
         },
         {
           path: 'attendance-rule',

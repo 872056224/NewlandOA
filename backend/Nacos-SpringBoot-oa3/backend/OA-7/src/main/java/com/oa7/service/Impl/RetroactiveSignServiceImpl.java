@@ -7,14 +7,17 @@ import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.NotificationDao;
 import com.oa7.dao.RetroactiveSignDao;
 import com.oa7.dao.SignDao;
+import com.oa7.pojo.Admin;
 import com.oa7.pojo.Attendance;
 import com.oa7.pojo.RetroactiveSign;
 import com.oa7.service.RecalculateAttendanceService;
 import com.oa7.service.RetroactiveSignService;
+import com.oa7.util.AdminAuthUtil;
 import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -39,19 +42,41 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
     private RecalculateAttendanceService recalculateAttendanceService;
 
     @Override
-    public RESP getPending(int currentPage, int pageSize) {
+    public RESP getPending(int currentPage, int pageSize, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+
         PageHelper.startPage(currentPage, pageSize);
-        List<RetroactiveSign> list = retroactiveSignDao.selectPending();
+        List<RetroactiveSign> list;
+
+        if (admin != null && admin.isDeptHead()) {
+            // DEPT_HEAD：只看到本部门员工的补签申请
+            list = retroactiveSignDao.selectPendingByDept(admin.getDeptId());
+        } else {
+            // CHAIRMAN / HR_DIRECTOR：全部
+            list = retroactiveSignDao.selectPending();
+        }
+
         PageInfo<RetroactiveSign> pageInfo = new PageInfo<>(list);
         return RESP.ok(list, pageInfo.getPageNum(), (int) pageInfo.getTotal());
     }
 
     @Override
-    public RESP approve(int id) {
+    public RESP approve(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         RetroactiveSign sign = retroactiveSignDao.selectById(id);
         if (sign == null) return RESP.error("补签申请不存在");
         if (!"待审批".equals(sign.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
+        }
+
+        // DEPT_HEAD：只能审批本部门的补签
+        if (admin.isDeptHead()) {
+            Integer deptId = retroactiveSignDao.selectDeptIdBySignId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权审批其他部门的补签申请");
+            }
         }
 
         // 乐观锁更新
@@ -61,17 +86,15 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
         }
 
         // 更新签到状态
-        sign = retroactiveSignDao.selectById(id); // 重新读取最新数据
+        sign = retroactiveSignDao.selectById(id);
         if (sign != null) {
             signDao.updateStateByDateAndType(sign.getNumber(), sign.getSign_date(), sign.getType());
             notificationDao.insert("retroactive_approved", "补签已批准",
                     "您在 " + sign.getSign_date() + " 的补签申请已获批准",
                     sign.getNumber(), String.valueOf(id));
 
-            // 将该补签单的所有管理员通知标记为已读
             notificationDao.markAllReadByBizId(String.valueOf(id));
 
-            // 更新考勤记录并触发重算
             try {
                 LocalDate signDate = LocalDate.parse(sign.getSign_date());
                 Integer empId = sign.getNumber();
@@ -84,7 +107,6 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
                     attendance.setDate(signDate);
                 }
 
-                // 补签统一设为 09:00-18:00，覆盖原有时间
                 attendance.setCheckInTime(LocalDateTime.of(signDate, LocalTime.of(9, 0)));
                 attendance.setCheckOutTime(LocalDateTime.of(signDate, LocalTime.of(18, 0)));
                 attendance.setTodayStatus(TodayStatus.CHECKED_OUT);
@@ -101,14 +123,24 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
     }
 
     @Override
-    public RESP reject(int id) {
+    public RESP reject(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         RetroactiveSign sign = retroactiveSignDao.selectById(id);
         if (sign == null) return RESP.error("补签申请不存在");
         if (!"待审批".equals(sign.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
         }
 
-        // 乐观锁更新
+        // DEPT_HEAD：只能拒绝本部门的补签
+        if (admin.isDeptHead()) {
+            Integer deptId = retroactiveSignDao.selectDeptIdBySignId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权拒绝其他部门的补签申请");
+            }
+        }
+
         int ret = retroactiveSignDao.updateStatusWithVersion(id, "已拒绝", sign.getVersion());
         if (ret == 0) {
             return RESP.error("该申请已被他人处理，请刷新后重试");
@@ -120,7 +152,6 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
                     "您在 " + sign.getSign_date() + " 的补签申请已被拒绝",
                     sign.getNumber(), String.valueOf(id));
 
-            // 将该补签单的所有管理员通知标记为已读
             notificationDao.markAllReadByBizId(String.valueOf(id));
         }
 
@@ -128,14 +159,24 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
     }
 
     @Override
-    public RESP revoke(int id) {
+    public RESP revoke(int id, HttpSession session) {
+        Admin admin = AdminAuthUtil.getCurrentAdmin(session);
+        if (admin == null) return RESP.error(401, "未登录");
+
         RetroactiveSign sign = retroactiveSignDao.selectById(id);
         if (sign == null) return RESP.error("补签申请不存在");
         if (!"已批准".equals(sign.getStatus())) {
             return RESP.error("该申请已被他人处理，当前状态：" + sign.getStatus());
         }
 
-        // 乐观锁更新
+        // DEPT_HEAD：只能撤销本部门的补签
+        if (admin.isDeptHead()) {
+            Integer deptId = retroactiveSignDao.selectDeptIdBySignId(id);
+            if (deptId == null || !deptId.equals(admin.getDeptId())) {
+                return RESP.error(403, "无权撤销其他部门的补签申请");
+            }
+        }
+
         int ret = retroactiveSignDao.updateStatusWithVersion(id, "待审批", sign.getVersion());
         if (ret == 0) {
             return RESP.error("该申请已被他人处理，请刷新后重试");
@@ -143,7 +184,6 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
         sign = retroactiveSignDao.selectById(id);
         if (sign != null) {
-            // 清除之前设置的签到/签退时间
             try {
                 LocalDate signDate = LocalDate.parse(sign.getSign_date());
                 Integer empId = sign.getNumber();
@@ -164,7 +204,6 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
                     "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已被撤销",
                     sign.getNumber(), String.valueOf(id));
 
-            // 将该补签单的所有管理员通知标记为已读
             notificationDao.markAllReadByBizId(String.valueOf(id));
         }
 

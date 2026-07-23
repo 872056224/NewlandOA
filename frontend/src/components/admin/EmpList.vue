@@ -36,6 +36,12 @@
         <el-table-column align="center" label="地址" min-width="150" prop="address" />
         <el-table-column align="center" label="所属部门" min-width="140" prop="dept_name" />
         <el-table-column align="center" label="职务" min-width="140" prop="duty_name" />
+        <el-table-column align="center" label="月薪" min-width="120">
+          <template #default="{ row }">
+            <span>{{ getSalaryDisplay(row) }}</span>
+            <el-button text size="small" type="primary" @click="showSalaryDialog(row)">修改</el-button>
+          </template>
+        </el-table-column>
         <el-table-column align="center" label="操作" min-width="180">
           <template #default="{ row }">
             <el-button @click="showEditEmp(row)" type="warning">编辑</el-button>
@@ -172,6 +178,20 @@
         <el-button class="apple-btn apple-btn-primary" @click="deleteEmp" :loading="deleting">删除</el-button>
       </template>
     </el-dialog>
+    <!-- 修改月薪对话框 -->
+    <el-dialog v-model="salaryDialogVisible" title="修改月薪" width="400px" :close-on-click-modal="false" destroy-on-close>
+      <el-form label-width="100px">
+        <el-form-item label="员工姓名">{{ salaryEmp?.name }}</el-form-item>
+        <el-form-item label="当前月薪">{{ getSalaryDisplay(salaryEmp) }}</el-form-item>
+        <el-form-item label="新月薪">
+          <el-input-number v-model="newSalary" :min="0" :max="999999" :step="500" style="width: 200px" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="salaryDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmSalary" :loading="salaryLoading">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -219,6 +239,42 @@ const editFormData = reactive({
 })
 
 const currentEmp = ref<any>({})
+
+// 月薪修改
+const salaryDialogVisible = ref(false)
+const salaryLoading = ref(false)
+const salaryEmp = ref<any>(null)
+const newSalary = ref(0)
+
+// 岗位默认薪资对照
+const SALARY_MAP: Record<number, number> = {
+  17: 50000, 1: 35000, 2: 30000, 3: 25000, 4: 20000,
+  5: 6000, 9: 8000, 10: 15000, 16: 8000
+}
+
+const getSalaryDisplay = (row: any): string => {
+  if (row.base_salary) return String(row.base_salary)
+  const def = SALARY_MAP[row.duty_id]
+  return def ? String(def) : '5000'
+}
+
+const showSalaryDialog = (row: any) => {
+  salaryEmp.value = row
+  newSalary.value = row.base_salary || 0
+  salaryDialogVisible.value = true
+}
+
+const confirmSalary = async () => {
+  salaryLoading.value = true
+  try {
+    await axios.put(`/api/v1/admin/employees/${salaryEmp.value.number}/salary`,
+      { baseSalary: newSalary.value > 0 ? newSalary.value : null })
+    ElMessage.success('修改成功')
+    salaryDialogVisible.value = false
+    selectByPage()
+  } catch { ElMessage.error('修改失败') }
+  finally { salaryLoading.value = false }
+}
 
 const pagination = reactive({
   currentPage: 1,

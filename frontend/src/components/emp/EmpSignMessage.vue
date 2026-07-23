@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
@@ -70,7 +70,12 @@ const selectByPage = async () => {
       params: { currentPage: pagination.currentPage, pageSize: pagination.pageSize }
     })
     if (response.data && response.data.data) {
-      tableData.value = response.data.data || []
+      const raw = response.data.data || []
+      // 过滤掉节假日和休息日
+      tableData.value = raw.filter((r: any) => {
+        const s = r.todayStatus || ''
+        return s !== 'HOLIDAY' && s !== 'REST_DAY' && s !== '节假日' && s !== '休息日'
+      })
       pagination.total = response.data.total || 0
     } else {
       ElMessage.error('获取签到记录失败')
@@ -89,14 +94,15 @@ const formatTime = (dt: string): string => {
 }
 
 const formatStatus = (status: string): string => {
-  // API 已返回中文（@JsonValue），这里做兜底映射
   const map: Record<string, string> = {
     'NOT_CHECKED_IN': '未签到',
-    'CHECKED_IN': '签到异常',   // 仅有签到无签退视为异常
+    'CHECKED_IN': '签到异常',
     'CHECKED_OUT': '已签退',
     'ANOMALY': '签到异常',
     'LEAVE': '已请假',
     'MAKEUP_PENDING': '补卡审批中',
+    'HOLIDAY': '节假日',
+    'REST_DAY': '休息日',
   }
   return map[status] || status || '--'
 }
@@ -105,6 +111,7 @@ const getStatusClass = (status: string): string => {
   if (status === '已签退' || status === 'CHECKED_OUT') return 'state-badge state-signed'
   if (status === '签到异常' || status === 'ANOMALY' || status === 'CHECKED_IN') return 'state-badge state-anomaly'
   if (status === '已请假' || status === 'LEAVE') return 'state-badge state-leave'
+  if (status === '节假日' || status === 'HOLIDAY' || status === '休息日' || status === 'REST_DAY') return 'state-badge state-holiday'
   return 'state-badge state-unsigned'
 }
 
@@ -155,6 +162,7 @@ onMounted(() => { selectByPage() })
 .state-anomaly { background: #FFF3E0; color: #FF9500; }
 .state-unsigned { background: #FFEBEE; color: #FF3B30; }
 .state-leave { background: #F3E5F5; color: #AF52DE; }
+.state-holiday { background: #E8F5E9; color: #34C759; }
 
 .pagination-area { text-align: center; margin-top: 24px; }
 :deep(.el-pagination) { --el-pagination-font-size: 13px; }

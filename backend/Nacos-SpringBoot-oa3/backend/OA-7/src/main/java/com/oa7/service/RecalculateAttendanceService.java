@@ -53,8 +53,8 @@ public class RecalculateAttendanceService {
     private LocalTime getEffectiveStartTime() {
         try {
             AttendanceRule rule = attendanceRuleService.getDefaultRule();
-            if (rule != null && rule.getWorkStartTime() != null) {
-                return rule.getWorkStartTime();
+            if (rule != null && rule.getWork_start_time() != null) {
+                return rule.getWork_start_time();
             }
         } catch (Exception e) {
             log.debug("读取考勤规则失败，使用默认值", e);
@@ -68,8 +68,8 @@ public class RecalculateAttendanceService {
     private LocalTime getEffectiveEndTime() {
         try {
             AttendanceRule rule = attendanceRuleService.getDefaultRule();
-            if (rule != null && rule.getWorkEndTime() != null) {
-                return rule.getWorkEndTime();
+            if (rule != null && rule.getWork_end_time() != null) {
+                return rule.getWork_end_time();
             }
         } catch (Exception e) {
             log.debug("读取考勤规则失败，使用默认值", e);
@@ -104,10 +104,24 @@ public class RecalculateAttendanceService {
         // 更新数据库
         attendanceDao.updateAttendanceStatus(att.getId(), finalStatus);
 
-        // 如果最终状态是请假，同步更新 today_status
+        // 根据最终状态同步更新 today_status（前端签到记录页展示用）
+        TodayStatus newTodayStatus = null;
         if (finalStatus == AttendanceStatus.LEAVE) {
-            att.setTodayStatus(TodayStatus.LEAVE);
-            attendanceDao.updateTodayStatusByEmpAndDate(empId, date, TodayStatus.LEAVE);
+            newTodayStatus = TodayStatus.LEAVE;
+        } else if (finalStatus == AttendanceStatus.HOLIDAY) {
+            newTodayStatus = TodayStatus.HOLIDAY;
+        } else if (finalStatus == AttendanceStatus.REST_DAY) {
+            newTodayStatus = TodayStatus.REST_DAY;
+        } else if (att.getCheckInTime() != null && att.getCheckOutTime() != null) {
+            newTodayStatus = TodayStatus.CHECKED_OUT;
+        } else if (att.getCheckInTime() != null) {
+            newTodayStatus = TodayStatus.CHECKED_IN;
+        } else {
+            newTodayStatus = TodayStatus.NOT_CHECKED_IN;
+        }
+        if (newTodayStatus != null) {
+            att.setTodayStatus(newTodayStatus);
+            attendanceDao.updateTodayStatusByEmpAndDate(empId, date, newTodayStatus);
         }
 
         // 计算并更新缺时时长
@@ -228,8 +242,8 @@ public class RecalculateAttendanceService {
     private int getToleranceMinutes() {
         try {
             AttendanceRule rule = attendanceRuleService.getDefaultRule();
-            if (rule != null && rule.getMissingToleranceMin() != null) {
-                return rule.getMissingToleranceMin();
+            if (rule != null && rule.getMissing_tolerance_min() != null) {
+                return rule.getMissing_tolerance_min();
             }
         } catch (Exception e) {
             log.warn("读取缺时宽限失败，使用默认值", e);

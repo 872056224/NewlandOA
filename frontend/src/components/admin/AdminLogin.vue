@@ -140,6 +140,12 @@ const handleLogin = async () => {
         if (response.data === 'true' || response.data === true) {
           ElMessage.success('登录成功')
           router.push('/admin-home/dashboard')
+        } else if (response.data === 'no_emp_binding') {
+          ElMessage.error('该管理员账号未绑定员工，请联系管理员配置')
+        } else if (response.data === 'emp_not_found') {
+          ElMessage.error('关联的员工信息不存在')
+        } else if (response.data === 'no_permission') {
+          ElMessage.error('该账号无管理端权限（仅部长/副部长/董事长可登录）')
         } else {
           ElMessage.error('登录失败，请检查用户名和密码')
         }

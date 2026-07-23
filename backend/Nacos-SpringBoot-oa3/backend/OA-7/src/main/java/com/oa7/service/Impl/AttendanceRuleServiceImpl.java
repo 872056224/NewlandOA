@@ -34,7 +34,6 @@ public class AttendanceRuleServiceImpl implements AttendanceRuleService {
     public RESP getByDept(int deptId) {
         AttendanceRule rule = attendanceRuleDao.selectByDept(deptId);
         if (rule == null) {
-            // 部门没有专用规则时，返回默认规则
             AttendanceRule defaultRule = attendanceRuleDao.selectDefault();
             return RESP.ok(defaultRule);
         }
@@ -49,40 +48,36 @@ public class AttendanceRuleServiceImpl implements AttendanceRuleService {
 
     @Override
     public RESP save(AttendanceRule rule) {
-        // 校验必填字段
-        if (rule.getRuleName() == null || rule.getRuleName().trim().isEmpty()) {
+        if (rule.getRule_name() == null || rule.getRule_name().trim().isEmpty()) {
             return RESP.error("规则名称不能为空");
         }
-        if (rule.getWorkStartTime() == null) {
-            rule.setWorkStartTime(LocalTime.of(9, 0));
+        if (rule.getWork_start_time() == null) {
+            rule.setWork_start_time(LocalTime.of(9, 0));
         }
-        if (rule.getWorkEndTime() == null) {
-            rule.setWorkEndTime(LocalTime.of(18, 0));
+        if (rule.getWork_end_time() == null) {
+            rule.setWork_end_time(LocalTime.of(18, 0));
         }
-        if (rule.getLateThresholdMin() == null) {
-            rule.setLateThresholdMin(0);
+        if (rule.getLate_threshold_min() == null) {
+            rule.setLate_threshold_min(0);
         }
-        if (rule.getEarlyThresholdMin() == null) {
-            rule.setEarlyThresholdMin(0);
+        if (rule.getEarly_threshold_min() == null) {
+            rule.setEarly_threshold_min(0);
         }
         if (rule.getEnabled() == null) {
             rule.setEnabled(true);
         }
 
         if (rule.getId() != null && rule.getId() > 0) {
-            // 更新
             AttendanceRule existing = attendanceRuleDao.selectById(rule.getId());
             if (existing == null) {
                 return RESP.error("规则不存在，无法更新");
             }
-            // 保留原有 deptId 如果没传
-            if (rule.getDeptId() == null) {
-                rule.setDeptId(existing.getDeptId());
+            if (rule.getDept_id() == null) {
+                rule.setDept_id(existing.getDept_id());
             }
             attendanceRuleDao.update(rule);
             return RESP.ok("更新成功");
         } else {
-            // 新增
             attendanceRuleDao.insert(rule);
             return RESP.ok(rule);
         }
@@ -94,11 +89,9 @@ public class AttendanceRuleServiceImpl implements AttendanceRuleService {
         if (existing == null) {
             return RESP.error("规则不存在");
         }
-        // 不允许删除全局默认规则
-        if (existing.getDeptId() == null) {
+        if (existing.getDept_id() == null) {
             return RESP.error("全局默认规则不可删除");
         }
-        // 软删除：设置 enabled = false
         existing.setEnabled(false);
         attendanceRuleDao.update(existing);
         return RESP.ok("删除成功");

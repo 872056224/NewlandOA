@@ -16,5 +16,6 @@ public class Emp {
     private int duty_id;
     private String dept_name;
     private String duty_name;
+    private java.math.BigDecimal base_salary; // 自定义月薪，null则按职务默认
 
 }
