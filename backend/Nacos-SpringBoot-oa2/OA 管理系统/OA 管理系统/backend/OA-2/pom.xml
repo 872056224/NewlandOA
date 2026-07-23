@@ -29,12 +29,6 @@
             <version>1.2.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <optional>true</optional> <!-- 可选 -->
-        </dependency>
-
 
         <!--JSON解析库依赖（父管理 1.2.83，含安全修复与新 JDK 适配）-->
         <dependency>

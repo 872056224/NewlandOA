@@ -35,6 +35,11 @@ public interface AttendanceDao {
     Attendance selectByEmpAndDate(@Param("empId") int empId, @Param("date") LocalDate date);
 
     @ResultMap("attendanceMap")
+    @Select("SELECT * FROM day.attendance WHERE emp_id=#{empId} AND date >= #{start} AND date <= #{end} ORDER BY date")
+    List<Attendance> selectByEmpAndDateRange(@Param("empId") int empId, @Param("start") LocalDate start,
+                                              @Param("end") LocalDate end);
+
+    @ResultMap("attendanceMap")
     @Select("SELECT * FROM day.attendance WHERE emp_id=#{empId} ORDER BY date DESC LIMIT #{offset}, #{limit}")
     List<Attendance> selectByEmpPage(@Param("empId") int empId, @Param("offset") int offset, @Param("limit") int limit);
 

@@ -9,6 +9,7 @@ import com.oa2.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -144,12 +145,43 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (ym.equals(java.time.YearMonth.now())) {
             end = LocalDate.now();
         }
-        int totalMinutes = attendanceDao.sumMissingDurationByMonth(empId, start, end);
+        // 从 attendance 表获取当月所有有签到记录的明细，实时计算缺时
+        List<Attendance> records = attendanceDao.selectByEmpAndDateRange(empId, start, end);
+        int totalMinutes = 0;
+        for (Attendance a : records) {
+            if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
+                totalMinutes += computeMissingDuration(
+                    a.getCheckInTime().toLocalTime(),
+                    a.getCheckOutTime().toLocalTime());
+            }
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("empId", empId);
         result.put("yearMonth", yearMonth);
         result.put("totalMinutes", totalMinutes);
         return RESP.ok(result);
+    }
+
+    /** 核心工作时间 */
+    private static final LocalTime CORE_START = LocalTime.of(9, 0);
+    private static final LocalTime CORE_END = LocalTime.of(18, 0);
+    private static final int TOLERANCE = 30;
+
+    /** 实时计算单日缺时（与 OA-7 算法一致） */
+    private int computeMissingDuration(LocalTime checkIn, LocalTime checkOut) {
+        long missingX = 0;
+        if (checkIn.isAfter(CORE_START)) {
+            missingX += Duration.between(CORE_START, checkIn).toMinutes();
+        }
+        if (checkOut.isBefore(CORE_END)) {
+            missingX += Duration.between(checkOut, CORE_END).toMinutes();
+        }
+        long totalMinutes = Duration.between(checkIn, checkOut).toMinutes();
+        long coreMinutes = Duration.between(CORE_START, CORE_END).toMinutes();
+        long overtime = Math.max(0, totalMinutes - coreMinutes);
+        if (missingX > TOLERANCE) return (int) missingX;
+        if (overtime > TOLERANCE) return 0;
+        return (int) Math.max(0, missingX - overtime);
     }
 
     /** 解析地址 */
