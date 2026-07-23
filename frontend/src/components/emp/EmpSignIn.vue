@@ -103,8 +103,8 @@
 
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <span :class="row.todayStatus === 'CHECKED_IN' || row.todayStatus === 'CHECKED_OUT' || row.todayStatus === 'ANOMALY' ? 'state-signed' : 'state-missed'">
-              {{ formatTodayStatus(row.todayStatus) }}
+            <span :class="['已签到','已签退','签到异常'].includes(row.todayStatus) ? 'state-signed' : 'state-missed'">
+              {{ row.todayStatus || '--' }}
             </span>
           </template>
         </el-table-column>
@@ -445,8 +445,8 @@ const getTodaySignData = async () => {
     if (response.data && response.data.code === 200) {
       const d = response.data.data || {}
       const today = new Date().toISOString().split('T')[0]
-      const status = d.todayStatus || 'NOT_CHECKED_IN'
-      const hasCheckedIn = status === 'CHECKED_IN' || status === 'CHECKED_OUT' || status === 'ANOMALY'
+      const status = d.todayStatus || '未签到'
+      const hasCheckedIn = ['已签到', '已签退', '签到异常'].includes(status)
 
       // 上班卡（签到）
       const morningRecord = {

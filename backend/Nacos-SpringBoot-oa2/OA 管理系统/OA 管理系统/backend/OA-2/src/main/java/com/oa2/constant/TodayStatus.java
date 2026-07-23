@@ -21,6 +21,7 @@ public enum TodayStatus {
         this.displayName = displayName;
     }
 
+    @com.fasterxml.jackson.annotation.JsonValue
     public String getDisplayName() {
         return displayName;
     }
