@@ -38,3 +38,9 @@ dump.rdb
 application-local.yml
 application-local.yaml
 *local.yml
+
+# Design & Spec docs (keep only STARTUP.md)
+docs/
+*.md
+!STARTUP.md
+!**/README.md
