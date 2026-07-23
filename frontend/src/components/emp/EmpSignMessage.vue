@@ -26,10 +26,10 @@
             {{ row.checkOutAddress || '--' }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="140" align="center">
           <template #default="{ row }">
-            <span :class="getStatusClass(row.todayStatus)">
-              {{ formatStatus(row.todayStatus) }}
+            <span :class="getStatusClass(row.todayStatus)" :style="row.todayStatus === '已签退' && row.missingDuration > 0 ? {color:'#0071E3'} : {}">
+              {{ formatStatus(row.todayStatus) }}<template v-if="row.todayStatus === '已签退' && row.missingDuration > 0">/缺时</template>
             </span>
           </template>
         </el-table-column>

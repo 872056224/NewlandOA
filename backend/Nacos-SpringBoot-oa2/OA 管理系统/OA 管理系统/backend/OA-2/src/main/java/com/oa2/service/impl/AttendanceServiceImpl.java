@@ -115,9 +115,12 @@ public class AttendanceServiceImpl implements AttendanceService {
         int offset = (currentPage - 1) * pageSize;
         List<Attendance> list = attendanceDao.selectByEmpPage(empId, offset, pageSize);
         int total = attendanceDao.countByEmp(empId);
-        // 为历史记录计算正确的显示状态
+        // 为历史记录计算正确的显示状态和缺时时长
         for (Attendance att : list) {
             att.setTodayStatus(resolveDisplayStatus(att, att.getDate()));
+            att.setMissingDuration(att.getCheckInTime() != null && att.getCheckOutTime() != null
+                ? computeMissingDuration(att.getCheckInTime().toLocalTime(), att.getCheckOutTime().toLocalTime())
+                : 0);
         }
         return RESP.ok(list, currentPage, total);
     }
