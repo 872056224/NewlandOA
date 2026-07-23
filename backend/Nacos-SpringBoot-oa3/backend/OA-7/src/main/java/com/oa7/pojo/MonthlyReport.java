@@ -22,6 +22,7 @@ public class MonthlyReport {
     private Integer leaveCount;
     private Integer absenceCount;
     private Integer missingCardCount;
+    private Integer missingDuration;  // 当月累计缺时时长（分钟）
     private BigDecimal attendanceRate;
     private LocalDateTime createdAt;
 }

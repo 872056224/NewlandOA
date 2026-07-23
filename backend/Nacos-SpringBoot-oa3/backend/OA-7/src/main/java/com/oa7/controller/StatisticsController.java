@@ -237,8 +237,13 @@ public class StatisticsController {
 
         int normalCount = 0, lateCount = 0, earlyCount = 0;
         int leaveCount = 0, absenceCount = 0, missingCardCount = 0;
+        int totalMissingDuration = 0;  // 累计缺时时长（分钟）
 
         for (Attendance record : records) {
+            // 累加缺时时长
+            if (record.getMissingDuration() != null && record.getMissingDuration() > 0) {
+                totalMissingDuration += record.getMissingDuration();
+            }
             if (record.getAttendanceStatus() != null) {
                 switch (record.getAttendanceStatus().name()) {
                     case "NORMAL": normalCount++; break;
@@ -279,6 +284,7 @@ public class StatisticsController {
         report.setLeaveCount(leaveCount);
         report.setAbsenceCount(absenceCount);
         report.setMissingCardCount(missingCardCount);
+        report.setMissingDuration(totalMissingDuration);
         report.setAttendanceRate(attendanceRate);
 
         return report;

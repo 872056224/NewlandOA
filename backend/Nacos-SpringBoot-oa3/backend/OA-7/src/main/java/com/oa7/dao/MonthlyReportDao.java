@@ -18,15 +18,17 @@ public interface MonthlyReportDao {
      */
     @Insert("INSERT INTO day.monthly_report(" +
             "`year_month`, emp_id, emp_name, dept_id, work_days, actual_days, " +
-            "late_count, early_count, leave_count, absence_count, missing_card_count, attendance_rate" +
+            "late_count, early_count, leave_count, absence_count, missing_card_count, " +
+            "missing_duration, attendance_rate" +
             ") VALUES(" +
             "#{yearMonth}, #{empId}, #{empName}, #{deptId}, #{workDays}, #{actualDays}, " +
-            "#{lateCount}, #{earlyCount}, #{leaveCount}, #{absenceCount}, #{missingCardCount}, #{attendanceRate}" +
+            "#{lateCount}, #{earlyCount}, #{leaveCount}, #{absenceCount}, #{missingCardCount}, " +
+            "#{missingDuration}, #{attendanceRate}" +
             ") ON DUPLICATE KEY UPDATE " +
             "emp_name=#{empName}, dept_id=#{deptId}, work_days=#{workDays}, actual_days=#{actualDays}, " +
             "late_count=#{lateCount}, early_count=#{earlyCount}, leave_count=#{leaveCount}, " +
             "absence_count=#{absenceCount}, missing_card_count=#{missingCardCount}, " +
-            "attendance_rate=#{attendanceRate}")
+            "missing_duration=#{missingDuration}, attendance_rate=#{attendanceRate}")
     int insertOrUpdate(MonthlyReport report);
 
     /**
@@ -46,6 +48,7 @@ public interface MonthlyReportDao {
         @Result(property = "leaveCount", column = "leave_count"),
         @Result(property = "absenceCount", column = "absence_count"),
         @Result(property = "missingCardCount", column = "missing_card_count"),
+        @Result(property = "missingDuration", column = "missing_duration"),
         @Result(property = "attendanceRate", column = "attendance_rate"),
         @Result(property = "createdAt", column = "created_at")
     })
