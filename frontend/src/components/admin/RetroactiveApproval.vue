@@ -14,7 +14,7 @@
         <el-table-column label="日期" prop="sign_date" width="150" align="center" />
         <el-table-column label="时段" width="80" align="center">
           <template #default="{ row }">
-            <span class="type-tag">{{ row.type === 'a' ? '上午' : '下午' }}</span>
+            <span class="type-tag">全天</span>
           </template>
         </el-table-column>
         <el-table-column label="原因" prop="reason" min-width="200" show-overflow-tooltip />

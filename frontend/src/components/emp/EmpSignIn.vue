@@ -159,12 +159,6 @@
             :disabled-date="disableRetroDate"
           />
         </el-form-item>
-        <el-form-item label="补签类型">
-          <el-select v-model="retroactiveForm.type" style="width: 100%">
-            <el-option label="上班签到 (上午)" value="a" />
-            <el-option label="下班签退 (下午)" value="p" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="补签原因">
           <el-input v-model="retroactiveForm.reason" type="textarea" :rows="3" maxlength="200" show-word-limit />
         </el-form-item>
@@ -264,7 +258,6 @@ const showRetroactiveDialog = ref(false)
 const retroactiveSubmitting = ref(false)
 const retroactiveForm = reactive({
   date: '',
-  type: 'a',
   reason: ''
 })
 
@@ -696,7 +689,7 @@ const submitRetroactive = async () => {
   try {
     const response = await axios.post('/api/v1/employee/attendance/retroactive/apply', {
       signDate: retroactiveForm.date,
-      type: retroactiveForm.type,
+      type: 'a',
       reason: retroactiveForm.reason
     })
     if (response.data && response.data.code === 200) {

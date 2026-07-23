@@ -64,9 +64,8 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
         sign = retroactiveSignDao.selectById(id); // 重新读取最新数据
         if (sign != null) {
             signDao.updateStateByDateAndType(sign.getNumber(), sign.getSign_date(), sign.getType());
-            String typeLabel = sign.getType().equals("a") ? "上午" : "下午";
             notificationDao.insert("retroactive_approved", "补签已批准",
-                    "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已获批准",
+                    "您在 " + sign.getSign_date() + " 的补签申请已获批准",
                     sign.getNumber(), String.valueOf(id));
 
             // 将该补签单的所有管理员通知标记为已读
@@ -85,16 +84,15 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
                     attendance.setDate(signDate);
                 }
 
-                if ("a".equals(sign.getType())) {
-                    attendance.setCheckInTime(LocalDateTime.of(signDate, LocalTime.of(9, 0)));
-                } else if ("p".equals(sign.getType())) {
-                    attendance.setCheckOutTime(LocalDateTime.of(signDate, LocalTime.of(18, 0)));
-                }
+                // 补签统一设为 09:00-18:00，覆盖原有时间
+                attendance.setCheckInTime(LocalDateTime.of(signDate, LocalTime.of(9, 0)));
+                attendance.setCheckOutTime(LocalDateTime.of(signDate, LocalTime.of(18, 0)));
+                attendance.setTodayStatus(TodayStatus.CHECKED_OUT);
 
                 attendanceDao.updateCheckTime(attendance);
+                attendanceDao.updateTodayStatusByEmpAndDate(empId, signDate, TodayStatus.CHECKED_OUT);
                 recalculateAttendanceService.recalculate(empId, signDate);
             } catch (Exception e) {
-                // 考勤更新失败不应阻塞审批流程，仅记录日志
                 e.printStackTrace();
             }
         }
@@ -118,9 +116,8 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
         sign = retroactiveSignDao.selectById(id);
         if (sign != null) {
-            String typeLabel = sign.getType().equals("a") ? "上午" : "下午";
             notificationDao.insert("retroactive_rejected", "补签已拒绝",
-                    "您在 " + sign.getSign_date() + "(" + typeLabel + ") 的补签申请已被拒绝",
+                    "您在 " + sign.getSign_date() + " 的补签申请已被拒绝",
                     sign.getNumber(), String.valueOf(id));
 
             // 将该补签单的所有管理员通知标记为已读
@@ -153,11 +150,8 @@ public class RetroactiveSignServiceImpl implements RetroactiveSignService {
 
                 Attendance attendance = attendanceDao.selectByEmpAndDate(empId, signDate);
                 if (attendance != null) {
-                    if ("a".equals(sign.getType())) {
-                        attendance.setCheckInTime(null);
-                    } else if ("p".equals(sign.getType())) {
-                        attendance.setCheckOutTime(null);
-                    }
+                    attendance.setCheckInTime(null);
+                    attendance.setCheckOutTime(null);
                     attendanceDao.updateCheckTime(attendance);
                     recalculateAttendanceService.recalculate(empId, signDate);
                 }
