@@ -340,6 +340,7 @@ const formatTodayStatus = (status: string): string => {
     'CHECKED_IN': '已签到',
     'CHECKED_OUT': '已签退',
     'LEAVE': '已请假',
+    'ANOMALY': '签到异常',
   }
   return map[status] || status || '--'
 }

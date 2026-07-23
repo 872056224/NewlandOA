@@ -181,22 +181,31 @@
               <span>请选择员工和月份后点击"查询"</span>
             </div>
             <div v-else>
-              <!-- Personal Info Header -->
-              <div class="personal-summary-header">
-                <el-descriptions :column="4" border size="small">
-                  <el-descriptions-item label="姓名">{{ monthlyData.empName || '--' }}</el-descriptions-item>
-                  <el-descriptions-item label="员工编号">{{ monthlyData.empId || '--' }}</el-descriptions-item>
-                  <el-descriptions-item label="年份月份">{{ monthlyData.yearMonth || monthlyYearMonth }}</el-descriptions-item>
-                  <el-descriptions-item label="出勤率">
-                    <el-tag :type="attendanceRateType(monthlyData.attendanceRate)" size="small">
-                      {{ monthlyData.attendanceRate != null ? monthlyData.attendanceRate + '%' : '--' }}
-                    </el-tag>
-                  </el-descriptions-item>
-                </el-descriptions>
+              <!-- Summary Bar — 放到表格上方 -->
+              <div class="monthly-summary-bar" v-if="monthlyDailyRecords.length > 0">
+                <div class="summary-stat">
+                  <span class="summary-stat-label">工作日</span>
+                  <span class="summary-stat-value">{{ monthlyData.workDays ?? '--' }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">出勤天数</span>
+                  <span class="summary-stat-value">{{ monthlyData.actualDays ?? '--' }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">累计缺时(分钟)</span>
+                  <span class="summary-stat-value">{{ monthlyData.missingDuration ?? 0 }}</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="summary-stat-label">出勤率</span>
+                  <span class="summary-stat-value" :class="rateColor(monthlyData.attendanceRate)">
+                    {{ monthlyData.attendanceRate != null ? monthlyData.attendanceRate + '%' : '--' }}
+                  </span>
+                </div>
               </div>
-              <!-- Daily Detail Table -->
+
+              <!-- Daily Detail Table — 倒序 + 分页 -->
               <el-table
-                :data="monthlyDailyRecords"
+                :data="pagedMonthlyRecords"
                 v-loading="monthlyLoading"
                 stripe
                 style="width: 100%; margin-top: 16px;"
@@ -231,26 +240,14 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <!-- Summary Row -->
-              <div class="monthly-summary-bar" v-if="monthlyDailyRecords.length > 0">
-                <div class="summary-stat">
-                  <span class="summary-stat-label">工作日</span>
-                  <span class="summary-stat-value">{{ monthlyData.workDays ?? '--' }}</span>
-                </div>
-                <div class="summary-stat">
-                  <span class="summary-stat-label">出勤天数</span>
-                  <span class="summary-stat-value">{{ monthlyData.actualDays ?? '--' }}</span>
-                </div>
-                <div class="summary-stat">
-                  <span class="summary-stat-label">累计缺时(分钟)</span>
-                  <span class="summary-stat-value">{{ monthlyData.missingDuration ?? 0 }}</span>
-                </div>
-                <div class="summary-stat">
-                  <span class="summary-stat-label">出勤率</span>
-                  <span class="summary-stat-value" :class="rateColor(monthlyData.attendanceRate)">
-                    {{ monthlyData.attendanceRate != null ? monthlyData.attendanceRate + '%' : '--' }}
-                  </span>
-                </div>
+              <div class="pagination-wrap" v-if="monthlyDailyRecords.length > monthlyPageSize">
+                <el-pagination
+                  v-model:current-page="monthlyPage"
+                  v-model:page-size="monthlyPageSize"
+                  :total="monthlyDailyRecords.length"
+                  :page-sizes="[10, 20, 50]"
+                  layout="total, sizes, prev, pager, next"
+                />
               </div>
             </div>
           </el-card>
@@ -393,6 +390,13 @@ const generating = ref(false)
 const monthlyData = ref<any>(null)
 const monthlyDailyRecords = ref<any[]>([])
 const employeeList = ref<any[]>([])
+const monthlyPage = ref(1)
+const monthlyPageSize = ref(10)
+const pagedMonthlyRecords = computed(() => {
+  const start = (monthlyPage.value - 1) * monthlyPageSize.value
+  const end = start + monthlyPageSize.value
+  return monthlyDailyRecords.value.slice(start, end)
+})
 
 // Department tab
 const deptYearMonth = ref(formatMonth(new Date()))
@@ -702,7 +706,10 @@ async function loadMonthlyStats() {
     })
     if (response.data && response.data.data) {
       monthlyData.value = response.data.data.summary
-      monthlyDailyRecords.value = response.data.data.dailyRecords || []
+      // 倒序（今天在顶） + 重置分页
+      const records = response.data.data.dailyRecords || []
+      monthlyDailyRecords.value = records.slice().reverse()
+      monthlyPage.value = 1
     } else if (response.data && response.data.code === 500) {
       ElMessage.warning(response.data.message || '未找到该员工考勤数据')
       monthlyData.value = null
