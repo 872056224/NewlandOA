@@ -1,25 +1,15 @@
 mysqldump: [Warning] Using a password on the command line interface can be insecure.
--- MySQL dump 10.13  Distrib 8.0.21, for Win64 (x86_64)
---
--- Host: localhost    Database: day
--- ------------------------------------------------------
--- Server version	8.0.21
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `admin`
---
-
 DROP TABLE IF EXISTS `admin`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -31,10 +21,6 @@ CREATE TABLE `admin` (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=10068 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `admin`
---
 
 LOCK TABLES `admin` WRITE;
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
@@ -71,11 +57,6 @@ INSERT INTO `admin` VALUES (10066,'test_dw','202cb962ac59075b964b07152d234b70',2
 INSERT INTO `admin` VALUES (10067,'test_xc','202cb962ac59075b964b07152d234b70',243);
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `attendance`
---
-
 DROP TABLE IF EXISTS `attendance`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -99,10 +80,6 @@ CREATE TABLE `attendance` (
   KEY `idx_emp` (`emp_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3746 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='鑰冨嫟璁板綍锛堟牳蹇冭〃锛';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `attendance`
---
 
 LOCK TABLES `attendance` WRITE;
 /*!40000 ALTER TABLE `attendance` DISABLE KEYS */;
@@ -1152,11 +1129,6 @@ INSERT INTO `attendance` VALUES (3744,245,'2026-07-23',NULL,NULL,'NOT_CHECKED_IN
 INSERT INTO `attendance` VALUES (3745,246,'2026-07-23',NULL,NULL,'NOT_CHECKED_IN','ABSENCE',NULL,'2026-07-23 15:37:51','2026-07-23 15:38:15',NULL,NULL,0);
 /*!40000 ALTER TABLE `attendance` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `attendance_rule`
---
-
 DROP TABLE IF EXISTS `attendance_rule`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1176,20 +1148,11 @@ CREATE TABLE `attendance_rule` (
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COMMENT='考勤规则表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `attendance_rule`
---
-
 LOCK TABLES `attendance_rule` WRITE;
 /*!40000 ALTER TABLE `attendance_rule` DISABLE KEYS */;
 INSERT INTO `attendance_rule` VALUES (1,'默认规则',NULL,'09:00:00','18:00:00',0,0,1,'2026-07-22 23:10:12','2026-07-23 18:46:51',30);
 /*!40000 ALTER TABLE `attendance_rule` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `daily_report`
---
-
 DROP TABLE IF EXISTS `daily_report`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1212,19 +1175,10 @@ CREATE TABLE `daily_report` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='日报统计表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `daily_report`
---
-
 LOCK TABLES `daily_report` WRITE;
 /*!40000 ALTER TABLE `daily_report` DISABLE KEYS */;
 /*!40000 ALTER TABLE `daily_report` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `department`
---
-
 DROP TABLE IF EXISTS `department`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1234,10 +1188,6 @@ CREATE TABLE `department` (
   PRIMARY KEY (`dept_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `department`
---
 
 LOCK TABLES `department` WRITE;
 /*!40000 ALTER TABLE `department` DISABLE KEYS */;
@@ -1254,11 +1204,6 @@ INSERT INTO `department` VALUES (20,'testdep');
 INSERT INTO `department` VALUES (21,'电竞俱乐部');
 /*!40000 ALTER TABLE `department` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `duty`
---
-
 DROP TABLE IF EXISTS `duty`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1268,10 +1213,6 @@ CREATE TABLE `duty` (
   PRIMARY KEY (`duty_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `duty`
---
 
 LOCK TABLES `duty` WRITE;
 /*!40000 ALTER TABLE `duty` DISABLE KEYS */;
@@ -1286,11 +1227,6 @@ INSERT INTO `duty` VALUES (16,'Web前端工程师');
 INSERT INTO `duty` VALUES (17,'董事长');
 /*!40000 ALTER TABLE `duty` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `emp`
---
-
 DROP TABLE IF EXISTS `emp`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1310,10 +1246,6 @@ CREATE TABLE `emp` (
   CONSTRAINT `emp_ibfk_2` FOREIGN KEY (`duty_id`) REFERENCES `duty` (`duty_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=247 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `emp`
---
 
 LOCK TABLES `emp` WRITE;
 /*!40000 ALTER TABLE `emp` DISABLE KEYS */;
@@ -1377,11 +1309,6 @@ INSERT INTO `emp` VALUES (245,'曹彰','202cb962ac59075b964b07152d234b70','1994-
 INSERT INTO `emp` VALUES (246,'曹真','202cb962ac59075b964b07152d234b70','1995-05-01','福建省福州市',19,9,NULL);
 /*!40000 ALTER TABLE `emp` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `holiday`
---
-
 DROP TABLE IF EXISTS `holiday`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1396,10 +1323,6 @@ CREATE TABLE `holiday` (
   KEY `idx_year` (`year`)
 ) ENGINE=InnoDB AUTO_INCREMENT=731 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='鏃ュ巻閰嶇疆';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `holiday`
---
 
 LOCK TABLES `holiday` WRITE;
 /*!40000 ALTER TABLE `holiday` DISABLE KEYS */;
@@ -2135,11 +2058,6 @@ INSERT INTO `holiday` VALUES (729,'2027-12-30','WORKDAY','工作日',2027);
 INSERT INTO `holiday` VALUES (730,'2027-12-31','WORKDAY','工作日',2027);
 /*!40000 ALTER TABLE `holiday` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `kb_doc`
---
-
 DROP TABLE IF EXISTS `kb_doc`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2155,10 +2073,6 @@ CREATE TABLE `kb_doc` (
   KEY `idx_enabled` (`enabled`)
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8 COMMENT='AI客服知识库';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `kb_doc`
---
 
 LOCK TABLES `kb_doc` WRITE;
 /*!40000 ALTER TABLE `kb_doc` DISABLE KEYS */;
@@ -2186,11 +2100,6 @@ INSERT INTO `kb_doc` VALUES (21,'怎么联系人工客服','如果 AI 客服无�
 INSERT INTO `kb_doc` VALUES (22,'怎么退出登录','点击页面右上角的【退出登录】按钮，确认后即可安全退出系统并返回登录页。在公共电脑上使用后请务必退出登录，防止账号被他人使用。','退出 登出 注销 安全退出',0,1,'2026-07-15 17:02:04');
 /*!40000 ALTER TABLE `kb_doc` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `leave`
---
-
 DROP TABLE IF EXISTS `leave`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2210,10 +2119,6 @@ CREATE TABLE `leave` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `leave`
---
-
 LOCK TABLES `leave` WRITE;
 /*!40000 ALTER TABLE `leave` DISABLE KEYS */;
 INSERT INTO `leave` VALUES ('3028436a-78d8-4af8-a450-879d16dae3cd',121,'陈乐',NULL,'技术部','2025-07-29 16:00:00','2025-07-30 16:00:00','请假一天，申请去苏州游玩。望领导批准','已拒绝',0,'FULL_DAY');
@@ -2228,11 +2133,6 @@ INSERT INTO `leave` VALUES ('dd80b232-eef2-4bbc-9562-dc93d6304289',127,'陈乐',
 INSERT INTO `leave` VALUES ('ea22e277-7bc5-4ee6-ae2c-5abbee385945',147,'吴星星','事假','Java研发部','2026-07-23 00:00:00','2026-07-24 00:00:00','请假','已拒绝',1,'FULL_DAY');
 /*!40000 ALTER TABLE `leave` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `makeup_request`
---
-
 DROP TABLE IF EXISTS `makeup_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2252,19 +2152,10 @@ CREATE TABLE `makeup_request` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='琛ュ崱鐢宠?';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `makeup_request`
---
-
 LOCK TABLES `makeup_request` WRITE;
 /*!40000 ALTER TABLE `makeup_request` DISABLE KEYS */;
 /*!40000 ALTER TABLE `makeup_request` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `monthly_report`
---
-
 DROP TABLE IF EXISTS `monthly_report`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2290,19 +2181,10 @@ CREATE TABLE `monthly_report` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='月度考勤统计表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `monthly_report`
---
-
 LOCK TABLES `monthly_report` WRITE;
 /*!40000 ALTER TABLE `monthly_report` DISABLE KEYS */;
 /*!40000 ALTER TABLE `monthly_report` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `notification`
---
-
 DROP TABLE IF EXISTS `notification`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2320,10 +2202,6 @@ CREATE TABLE `notification` (
   KEY `idx_time` (`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=263 DEFAULT CHARSET=utf8 COMMENT='閫氱煡娑堟伅琛';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `notification`
---
 
 LOCK TABLES `notification` WRITE;
 /*!40000 ALTER TABLE `notification` DISABLE KEYS */;
@@ -2425,11 +2303,6 @@ INSERT INTO `notification` VALUES (261,'retroactive_submitted','新补签申请'
 INSERT INTO `notification` VALUES (262,'retroactive_submitted','新补签申请','员工提交了 2026-07-23(上午) 的补签申请',10055,'21',0,'2026-07-23 18:24:31');
 /*!40000 ALTER TABLE `notification` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `overtime_request`
---
-
 DROP TABLE IF EXISTS `overtime_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2454,20 +2327,11 @@ CREATE TABLE `overtime_request` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `overtime_request`
---
-
 LOCK TABLES `overtime_request` WRITE;
 /*!40000 ALTER TABLE `overtime_request` DISABLE KEYS */;
 INSERT INTO `overtime_request` VALUES (1,148,'2026-07-25','08:00:00','18:00:00',10.0,10.0,'ganxiangmu','APPROVED','',1,'2026-07-23 17:08:49','2026-07-23 17:14:13');
 /*!40000 ALTER TABLE `overtime_request` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `retroactive_sign`
---
-
 DROP TABLE IF EXISTS `retroactive_sign`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2486,10 +2350,6 @@ CREATE TABLE `retroactive_sign` (
 ) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8 COMMENT='绛惧埌琛ョ?鐢宠?琛';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `retroactive_sign`
---
-
 LOCK TABLES `retroactive_sign` WRITE;
 /*!40000 ALTER TABLE `retroactive_sign` DISABLE KEYS */;
 INSERT INTO `retroactive_sign` VALUES (19,129,'2026-07-15','a','buqian','已批准','2026-07-23 14:45:55',1);
@@ -2497,11 +2357,6 @@ INSERT INTO `retroactive_sign` VALUES (20,149,'2026-07-15','a','buqian','已批�
 INSERT INTO `retroactive_sign` VALUES (21,201,'2026-07-23','a','忘记了','待审批','2026-07-23 18:24:31',0);
 /*!40000 ALTER TABLE `retroactive_sign` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `salary_detail`
---
-
 DROP TABLE IF EXISTS `salary_detail`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2528,10 +2383,6 @@ CREATE TABLE `salary_detail` (
   KEY `idx_emp_month` (`emp_id`,`year_month`)
 ) ENGINE=InnoDB AUTO_INCREMENT=697 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `salary_detail`
---
 
 LOCK TABLES `salary_detail` WRITE;
 /*!40000 ALTER TABLE `salary_detail` DISABLE KEYS */;
@@ -2595,11 +2446,6 @@ INSERT INTO `salary_detail` VALUES (695,245,'2026-07',8000.00,22,363.64,40.40,15
 INSERT INTO `salary_detail` VALUES (696,246,'2026-07',8000.00,22,363.64,40.40,15,0,0.00,0.0,0.00,0.0,0.00,5454.55,'CALCULATED','2026-07-23 18:46:45','2026-07-23 18:46:45');
 /*!40000 ALTER TABLE `salary_detail` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `sign`
---
-
 DROP TABLE IF EXISTS `sign`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2615,10 +2461,6 @@ CREATE TABLE `sign` (
   CONSTRAINT `sign_ibfk_1` FOREIGN KEY (`number`) REFERENCES `emp` (`number`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1919 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sign`
---
 
 LOCK TABLES `sign` WRITE;
 /*!40000 ALTER TABLE `sign` DISABLE KEYS */;
@@ -3352,10 +3194,6 @@ INSERT INTO `sign` VALUES (1835,'2026-01-27 08:30:00:00',148,'未签到','a',NUL
 INSERT INTO `sign` VALUES (1836,'2026-01-27 17:30:00:00',148,'未签到','p',NULL);
 /*!40000 ALTER TABLE `sign` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping routines for database 'day'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -3366,4 +3204,3 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-23 22:54:52
