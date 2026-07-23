@@ -18,7 +18,7 @@ WHERE
   AND a.check_out_time IS NULL;
 SELECT ROW_COUNT() AS 'updated';
 
--- Step 2: 完全无记录的工作日 → 为每个员工插入一条
+-- Step 2: 完全无记录的工作日 → 为每个员工插入一条（排除请假）
 INSERT IGNORE INTO day.attendance(emp_id, date, check_in_time, check_out_time,
   check_in_address, check_out_address, today_status)
 SELECT e.number, h.date,
@@ -29,5 +29,10 @@ FROM day.holiday h
 CROSS JOIN day.emp e
 WHERE h.date BETWEEN '2026-06-01' AND CURDATE()
   AND h.type = 'WORKDAY'
-  AND NOT EXISTS (SELECT 1 FROM day.attendance a WHERE a.date = h.date AND a.emp_id = e.number);
+  AND NOT EXISTS (SELECT 1 FROM day.attendance a WHERE a.date = h.date AND a.emp_id = e.number)
+  AND NOT EXISTS (  -- 排除请假
+    SELECT 1 FROM day.leave l
+    WHERE l.number = e.number AND l.status = '已批准'
+      AND h.date >= DATE(l.start_date) AND h.date <= DATE(l.end_date)
+  );
 SELECT ROW_COUNT() AS 'inserted';

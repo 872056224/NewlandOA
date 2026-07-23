@@ -103,7 +103,7 @@
 
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <span :class="['已签到','已签退','签到异常'].includes(row.todayStatus) ? 'state-signed' : 'state-missed'">
+            <span :class="'status-' + (row.todayStatus === '已签退' ? 'signed' : row.todayStatus === '签到异常' ? 'anomaly' : row.todayStatus === '已请假' ? 'leave' : 'missed')">
               {{ row.todayStatus || '--' }}
             </span>
           </template>
@@ -1002,17 +1002,20 @@ onUnmounted(() => {
   color: var(--apple-orange);
 }
 
-/* 状态文字 */
+/* 状态文字 — 已签退🟢 / 签到异常🟡 / 未签到🔴 / 已请假🟣 */
 .state-signed {
   color: var(--apple-green);
   font-size: 13px;
   font-weight: 500;
 }
-
 .state-missed {
   color: var(--apple-text-tertiary);
   font-size: 13px;
 }
+.status-signed { color: #34C759; font-weight: 600; font-size: 13px; }
+.status-anomaly { color: #FF9500; font-weight: 600; font-size: 13px; }
+.status-missed { color: #FF3B30; font-weight: 600; font-size: 13px; }
+.status-leave { color: #AF52DE; font-weight: 600; font-size: 13px; }
 
 .pagination-container {
   margin-top: 20px;

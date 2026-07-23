@@ -124,17 +124,22 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     /**
      * 判断考勤记录的显示状态：
-     * - 当天：用原有 todayStatus
-     * - 历史：仅有签到无签退 → 异常
+     * - 签到+签退 → 已签退
+     * - 仅签到无签退 → 签到异常
+     * - 无签到 → 未签到（除非请假）
      */
     private TodayStatus resolveDisplayStatus(Attendance att, LocalDate date) {
-        if (att.getDate() != null && !att.getDate().equals(LocalDate.now())) {
-            // 历史记录：有签到无签退 → 异常
-            if (att.getCheckInTime() != null && att.getCheckOutTime() == null) {
-                return TodayStatus.ANOMALY;
-            }
+        // 请假优先
+        if (att.getTodayStatus() == TodayStatus.LEAVE) {
+            return TodayStatus.LEAVE;
         }
-        return att.getTodayStatus() != null ? att.getTodayStatus() : TodayStatus.NOT_CHECKED_IN;
+        if (att.getCheckInTime() != null && att.getCheckOutTime() != null) {
+            return TodayStatus.CHECKED_OUT;  // 已签退
+        }
+        if (att.getCheckInTime() != null && att.getCheckOutTime() == null) {
+            return TodayStatus.ANOMALY;  // 签到异常
+        }
+        return TodayStatus.NOT_CHECKED_IN;  // 未签到
     }
 
     @Override
