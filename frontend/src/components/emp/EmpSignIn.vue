@@ -1012,10 +1012,10 @@ onUnmounted(() => {
   color: var(--apple-text-tertiary);
   font-size: 13px;
 }
-.status-signed { color: #34C759; font-weight: 600; font-size: 13px; }
-.status-anomaly { color: #FF9500; font-weight: 600; font-size: 13px; }
-.status-missed { color: #FF3B30; font-weight: 600; font-size: 13px; }
-.status-leave { color: #AF52DE; font-weight: 600; font-size: 13px; }
+.status-signed { color: #34C759 !important; font-weight: 600; }
+.status-anomaly { color: #FF9500 !important; font-weight: 600; }
+.status-missed { color: #FF3B30 !important; font-weight: 600; }
+.status-leave { color: #AF52DE !important; font-weight: 600; }
 
 .pagination-container {
   margin-top: 20px;
