@@ -103,7 +103,7 @@
 
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <span :class="row.todayStatus === 'CHECKED_IN' || row.todayStatus === 'CHECKED_OUT' ? 'state-signed' : 'state-missed'">
+            <span :class="row.todayStatus === 'CHECKED_IN' || row.todayStatus === 'CHECKED_OUT' || row.todayStatus === 'ANOMALY' ? 'state-signed' : 'state-missed'">
               {{ formatTodayStatus(row.todayStatus) }}
             </span>
           </template>
