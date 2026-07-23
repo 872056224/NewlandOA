@@ -104,6 +104,12 @@ public class RecalculateAttendanceService {
         // 更新数据库
         attendanceDao.updateAttendanceStatus(att.getId(), finalStatus);
 
+        // 如果最终状态是请假，同步更新 today_status
+        if (finalStatus == AttendanceStatus.LEAVE) {
+            att.setTodayStatus(TodayStatus.LEAVE);
+            attendanceDao.updateTodayStatusByEmpAndDate(empId, date, TodayStatus.LEAVE);
+        }
+
         // 计算并更新缺时时长
         // 请假/节假日/休息日 → 缺时为 0
         int missingMin = 0;
