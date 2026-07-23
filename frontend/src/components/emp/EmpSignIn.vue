@@ -446,7 +446,7 @@ const getTodaySignData = async () => {
       const d = response.data.data || {}
       const today = new Date().toISOString().split('T')[0]
       const status = d.todayStatus || 'NOT_CHECKED_IN'
-      const hasCheckedIn = status === 'CHECKED_IN' || status === 'CHECKED_OUT'
+      const hasCheckedIn = status === 'CHECKED_IN' || status === 'CHECKED_OUT' || status === 'ANOMALY'
 
       // 上班卡（签到）
       const morningRecord = {
