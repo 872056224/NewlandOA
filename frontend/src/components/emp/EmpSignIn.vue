@@ -140,7 +140,7 @@
 
     <!-- 补签申请按钮 -->
     <div class="retroactive-section">
-      <el-button type="warning" @click="openRetroactiveDialog" :disabled="isOnLeave" size="large">
+      <el-button type="warning" @click="openRetroactiveDialog" size="large">
         申请补签
       </el-button>
       <span class="retroactive-hint">漏签了？可申请补签当月内的签到记录</span>
@@ -268,12 +268,12 @@ const retroactiveForm = reactive({
   reason: ''
 })
 
-// 限制补签日期只能在当月
+// 限制补签日期只能在当月1日至今天
 const disableRetroDate = (time: Date) => {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-  return time.getTime() < startOfMonth.getTime() || time.getTime() > endOfMonth.getTime()
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+  return time.getTime() < startOfMonth.getTime() || time.getTime() > todayEnd.getTime()
 }
 
 // 定时器
