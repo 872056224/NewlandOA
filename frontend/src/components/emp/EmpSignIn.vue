@@ -143,7 +143,7 @@
       <el-button type="warning" @click="openRetroactiveDialog" :disabled="isOnLeave" size="large">
         申请补签
       </el-button>
-      <span class="retroactive-hint">漏签了？可申请补签本周内的签到记录</span>
+      <span class="retroactive-hint">漏签了？可申请补签当月内的签到记录</span>
     </div>
 
     <!-- 补签申请对话框 -->
@@ -268,23 +268,12 @@ const retroactiveForm = reactive({
   reason: ''
 })
 
-// 计算当周的周一和周日
-const getWeekRange = () => {
-  const now = new Date()
-  const dayOfWeek = now.getDay() // 0=Sun, 1=Mon...
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-  monday.setHours(0,0,0,0)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  sunday.setHours(23,59,59,999)
-  return { monday, sunday }
-}
-
-// 限制补签日期只能在当周
+// 限制补签日期只能在当月
 const disableRetroDate = (time: Date) => {
-  const { monday, sunday } = getWeekRange()
-  return time.getTime() < monday.getTime() || time.getTime() > sunday.getTime()
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+  return time.getTime() < startOfMonth.getTime() || time.getTime() > endOfMonth.getTime()
 }
 
 // 定时器
