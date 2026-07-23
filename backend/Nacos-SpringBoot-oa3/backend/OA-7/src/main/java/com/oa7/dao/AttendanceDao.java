@@ -126,6 +126,12 @@ public interface AttendanceDao {
                        @Param("todayStatus") TodayStatus todayStatus);
 
     /**
+     * 更新缺时时长
+     */
+    @Update("UPDATE day.attendance SET missing_duration=#{minutes} WHERE id=#{id}")
+    int updateMissingDuration(@Param("id") Long id, @Param("minutes") int minutes);
+
+    /**
      * 批量插入或更新（用于任务4的午夜自动创建）
      */
     @Insert({"<script>",

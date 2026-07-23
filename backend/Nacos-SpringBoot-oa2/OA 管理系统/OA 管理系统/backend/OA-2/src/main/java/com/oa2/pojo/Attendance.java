@@ -18,6 +18,7 @@ public class Attendance {
     private String checkInAddress;
     private String checkOutAddress;
     private String remark;
+    private Integer missingDuration;  // 缺时时长（分钟）
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -1,7 +1,5 @@
 package com.oa7.service.Impl;
 
-import com.oa7.constant.AttendanceStatus;
-import com.oa7.constant.TodayStatus;
 import com.oa7.dao.AttendanceDao;
 import com.oa7.dao.EmpDao;
 import com.oa7.dao.HolidayDao;
@@ -16,7 +14,9 @@ import com.oa7.util.RESP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,22 +25,44 @@ public class SignServiceImpl implements SignService {
 
     @Autowired
     private SignDao signDao;
-
     @Autowired
     private AttendanceDao attendanceDao;
-
     @Autowired
     private HolidayDao holidayDao;
-
     @Autowired
     private EmpDao empDao;
-
     @Autowired
     private LeaveDao leaveDao;
 
-    /** 缓存员工总数（每日刷新） */
+    /** 核心工作时间 09:00 - 18:00 */
+    private static final LocalTime CORE_START = LocalTime.of(9, 0);
+    private static final LocalTime CORE_END = LocalTime.of(18, 0);
+    /** 缺时容差（分钟） */
+    private static final long MAX_MISSING_MINUTES = 30;
+
     private int getTotalEmployeeCount() {
         return empDao.countUser();
+    }
+
+    /**
+     * 计算缺时时长：核心工作时间 09:00-18:00 内未覆盖的部分
+     * 扣减容差30分钟后仍>0则算缺时
+     */
+    private long calcMissingMinutes(LocalTime checkIn, LocalTime checkOut) {
+        if (checkIn == null || checkOut == null) return 0;
+        long missing = 0;
+        if (checkIn.isAfter(CORE_START)) {
+            missing += Duration.between(CORE_START, checkIn).toMinutes();
+        }
+        if (checkOut.isBefore(CORE_END)) {
+            missing += Duration.between(checkOut, CORE_END).toMinutes();
+        }
+        return Math.max(0, missing - MAX_MISSING_MINUTES);
+    }
+
+    /** 打卡成功 = 签到 + 签退 都有 */
+    private boolean isComplete(Attendance a) {
+        return a.getCheckInTime() != null && a.getCheckOutTime() != null;
     }
 
     @Override
@@ -57,7 +79,6 @@ public class SignServiceImpl implements SignService {
         LocalDate today = LocalDate.now();
         int totalEmployees = getTotalEmployeeCount();
 
-        // WORKDAY dates up to today
         List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
                 .filter(d -> !d.isAfter(today))
                 .collect(Collectors.toList());
@@ -71,23 +92,34 @@ public class SignServiceImpl implements SignService {
         List<LocalDate> pageDates = workdayDates.subList(start, end);
 
         List<O> statsList = new ArrayList<>();
+        boolean isToday = false;
         for (LocalDate date : pageDates) {
-            // 请假人数：从 leave 表统计当天已批准的请假（去重员工）
+            isToday = date.equals(today);
             int onLeave = leaveDao.countApprovedLeaveByDate(date.toString());
-
-            // 签到人数：从 attendance 表统计当天有签到/签退记录的员工
             List<Attendance> records = attendanceDao.selectByDate(date);
-            int signed = 0;
-            Set<Integer> signedEmpIds = new HashSet<>();
+
+            int signed = 0;          // 签到+签退齐全
+            int anomaly = 0;          // 打卡异常（仅签到无签退）
+            int missingDuration = 0; // 缺时人数（完整打卡但核心时间覆盖不足）
+
             for (Attendance a : records) {
-                if (a.getCheckInTime() != null) {
-                    signedEmpIds.add(a.getEmpId());
+                if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
+                    signed++;
+                    if (calcMissingMinutes(a.getCheckInTime().toLocalTime(),
+                                           a.getCheckOutTime().toLocalTime()) > 0) {
+                        missingDuration++;
+                    }
+                } else if (a.getCheckInTime() != null) {
+                    anomaly++;
                 }
             }
-            signed = signedEmpIds.size();
 
-            // 未签到 = 总人数 - 请假 - 已签到
-            int unsigned = Math.max(0, totalEmployees - onLeave - signed);
+            // 未签到 = 总人数 - 请假 - 签到完成
+            // 当天：打卡异常也当未签到（因为还没到结算时间）
+            // 历史：打卡异常单独列出来
+            int unsigned = isToday
+                ? Math.max(0, totalEmployees - onLeave - signed)
+                : Math.max(0, totalEmployees - onLeave - signed - anomaly);
 
             O o = new O();
             o.setDate(date.toString());
@@ -95,6 +127,8 @@ public class SignServiceImpl implements SignService {
             o.setOnLeave(onLeave);
             o.setSigned(signed);
             o.setUnsigned(unsigned);
+            o.setMissingDuration(missingDuration);
+            o.setAnomaly(anomaly);
             statsList.add(o);
         }
 
@@ -108,20 +142,33 @@ public class SignServiceImpl implements SignService {
 
         LocalDate localDate = LocalDate.parse(date);
         List<Attendance> records = attendanceDao.selectByDate(localDate);
-        Set<Integer> signedEmpIds = new HashSet<>();
+
+        int signed = 0;
+        int anomaly = 0;
+        int missingDuration = 0;
         for (Attendance a : records) {
-            if (a.getCheckInTime() != null) {
-                signedEmpIds.add(a.getEmpId());
+            if (a.getCheckInTime() != null && a.getCheckOutTime() != null) {
+                signed++;
+                if (calcMissingMinutes(a.getCheckInTime().toLocalTime(),
+                                       a.getCheckOutTime().toLocalTime()) > 0) {
+                    missingDuration++;
+                }
+            } else if (a.getCheckInTime() != null) {
+                anomaly++;
             }
         }
-        int signed = signedEmpIds.size();
-        int unsigned = Math.max(0, totalEmployees - onLeave - signed);
+        boolean isToday = localDate.equals(LocalDate.now());
+        int unsigned = isToday
+            ? Math.max(0, totalEmployees - onLeave - signed)
+            : Math.max(0, totalEmployees - onLeave - signed - anomaly);
 
         Map<String, Object> result = new HashMap<>();
         result.put("totalEmployees", totalEmployees);
         result.put("onLeave", onLeave);
         result.put("signed", signed);
         result.put("unsigned", unsigned);
+        result.put("missingDuration", missingDuration);
+        result.put("anomaly", anomaly);
         result.put("expected", totalEmployees - onLeave);
 
         return RESP.ok(result);
@@ -132,7 +179,6 @@ public class SignServiceImpl implements SignService {
         LocalDate today = LocalDate.now();
         int totalEmployees = getTotalEmployeeCount();
 
-        // 4 个最近的工作日（截止到今天）
         List<LocalDate> workdayDates = holidayDao.selectAllWorkdayDates().stream()
                 .filter(d -> !d.isAfter(today))
                 .limit(4)
@@ -146,18 +192,21 @@ public class SignServiceImpl implements SignService {
 
         for (LocalDate date : workdayDates) {
             int onLeave = leaveDao.countApprovedLeaveByDate(date.toString());
-
             List<Attendance> records = attendanceDao.selectByDate(date);
-            Set<Integer> signedEmpIds = new HashSet<>();
+
+            int signedCount = 0;
+            int anomalyCount = 0;
             for (Attendance a : records) {
-                if (a.getCheckInTime() != null) {
-                    signedEmpIds.add(a.getEmpId());
+                if (isComplete(a)) {
+                    signedCount++;
+                } else if (a.getCheckInTime() != null) {
+                    anomalyCount++;
                 }
             }
-            int signedCount = signedEmpIds.size();
 
             dateLabels.add(date.toString());
             signedData.add(signedCount);
+            // 柱状图：未签到 = 没打卡的 + 仅签到的（打卡异常当天也当未签到显示）
             unsignedData.add(Math.max(0, totalEmployees - onLeave - signedCount));
             leaveData.add(onLeave);
         }

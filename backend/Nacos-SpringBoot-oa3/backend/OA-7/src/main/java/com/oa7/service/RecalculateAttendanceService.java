@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
@@ -102,7 +103,12 @@ public class RecalculateAttendanceService {
 
         // 更新数据库 — 传枚举值，由 MyBatisEnumTypeHandler 转换为字符串
         attendanceDao.updateAttendanceStatus(att.getId(), finalStatus);
-        log.debug("考勤重算：员工 {} 日期 {} 状态 => {}", empId, date, finalStatus);
+
+        // 计算并更新缺时时长（核心工作时间 09:00-18:00 未覆盖部分, 扣30分钟容差）
+        int missingMin = computeMissingDuration(att);
+        attendanceDao.updateMissingDuration(att.getId(), missingMin);
+
+        log.debug("考勤重算：员工 {} 日期 {} 状态 => {}, 缺时 {}min", empId, date, finalStatus, missingMin);
 
         return finalStatus;
     }
@@ -196,5 +202,34 @@ public class RecalculateAttendanceService {
             log.warn("查询请假状态失败: empId={}, date={}", empId, date, e);
             return false;
         }
+    }
+
+    /** 核心工作时间 09:00-18:00 */
+    private static final LocalTime CORE_START = LocalTime.of(9, 0);
+    private static final LocalTime CORE_END = LocalTime.of(18, 0);
+    /** 容差分钟数 */
+    private static final long TOLERANCE_MINUTES = 30;
+
+    /**
+     * 计算缺时时长：核心工作时间 09:00-18:00 内未覆盖的部分
+     * 迟到/早退各扣30分钟容差，总和仍为正则记录
+     */
+    private int computeMissingDuration(Attendance att) {
+        if (att.getCheckInTime() == null || att.getCheckOutTime() == null) {
+            return 0;
+        }
+        LocalTime checkIn = att.getCheckInTime().toLocalTime();
+        LocalTime checkOut = att.getCheckOutTime().toLocalTime();
+
+        long missing = 0;
+        if (checkIn.isAfter(CORE_START)) {
+            missing += java.time.Duration.between(CORE_START, checkIn).toMinutes();
+        }
+        if (checkOut.isBefore(CORE_END)) {
+            missing += java.time.Duration.between(checkOut, CORE_END).toMinutes();
+        }
+        // 扣减容差
+        missing = Math.max(0, missing - TOLERANCE_MINUTES);
+        return (int) Math.min(missing, Integer.MAX_VALUE);
     }
 }

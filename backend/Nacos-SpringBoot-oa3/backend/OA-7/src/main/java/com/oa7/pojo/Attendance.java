@@ -19,6 +19,7 @@ public class Attendance {
     private LocalDateTime checkOutTime;
     private TodayStatus todayStatus;
     private AttendanceStatus attendanceStatus;
+    private Integer missingDuration;  // 缺时时长（分钟）
     private String remark;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

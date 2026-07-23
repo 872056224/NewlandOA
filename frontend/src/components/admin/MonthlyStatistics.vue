@@ -89,6 +89,8 @@
               </el-table-column>
               <el-table-column prop="signed" label="已签到" width="70" align="center" />
               <el-table-column prop="unsigned" label="未签到" width="70" align="center" />
+              <el-table-column prop="anomaly" label="打卡异常" width="80" align="center" />
+              <el-table-column prop="missingDuration" label="缺时" width="60" align="center" />
               <el-table-column label="签到率" min-width="100" align="center">
                 <template #default="{ row }">
                   <span :class="rateClass2(row.signed, row.totalEmployees - row.onLeave)">
