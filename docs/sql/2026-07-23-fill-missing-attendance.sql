@@ -3,6 +3,15 @@
 
 SET @address = '福建省福州市马尾区上坂路';
 
+-- Step 0: 只有签退没有签到的 → 补上签到 09:00
+UPDATE day.attendance
+SET
+  check_in_time = CAST(CONCAT(DATE_FORMAT(date, '%Y-%m-%d'), ' 09:00:00') AS DATETIME),
+  check_in_address = @address,
+  today_status = 'CHECKED_OUT'
+WHERE check_in_time IS NULL AND check_out_time IS NOT NULL;
+SELECT ROW_COUNT() AS 'fixed_checkout_only';
+
 -- Step 1: 已有记录但签到签退都为空 → 更新
 UPDATE day.attendance a
 JOIN day.holiday h ON a.date = h.date AND h.type = 'WORKDAY'

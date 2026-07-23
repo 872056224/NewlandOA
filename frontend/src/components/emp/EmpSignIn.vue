@@ -103,7 +103,12 @@
 
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <span :class="'status-' + (row.todayStatus === '已签退' ? 'signed' : row.todayStatus === '签到异常' ? 'anomaly' : row.todayStatus === '已请假' ? 'leave' : 'missed')">
+            <span :style="{
+              color: row.todayStatus === '已签退' ? '#34C759' :
+                     row.todayStatus === '签到异常' ? '#FF9500' :
+                     row.todayStatus === '已请假' ? '#AF52DE' : '#FF3B30',
+              fontWeight: 600
+            }">
               {{ row.todayStatus || '--' }}
             </span>
           </template>
